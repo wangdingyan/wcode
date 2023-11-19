@@ -1,4 +1,4 @@
-from .fingerprint import morgan_fingerprint
+from .fingerprint import smiles2fp
 from rdkit import DataStructs
 import pandas as pd
 from sklearn.cluster import KMeans
@@ -11,7 +11,7 @@ def cluster_smiles(smiles,
     if dists is None:
         fps = []
         for s in smiles:
-            fp = morgan_fingerprint(s)
+            fp = smiles2fp(s)
             fps.append(fp)
 
         dists = []

@@ -5,8 +5,7 @@ from biopandas.pdb import PandasPdb
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 import os
 from pathlib import Path
-# from .constant import RESI_THREE_TO_1
-import networkx as nx
+
 
 # https://github.com/a-r-j/graphein/blob/master/graphein/protein/graphs.py
 ########################################################################################################################
@@ -58,9 +57,6 @@ def save_pdb_df_to_pdb(
         ppd.df["HETATM"] = hetatm_df
     ppd.to_pdb(path=path, records=None, gz=gz, append_newline=True)
 
-
-# def three_to_one_with_mods(res: str) -> str:
-#     return RESI_THREE_TO_1[res]
 
 ########################################################################################################################
 

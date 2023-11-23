@@ -22,6 +22,7 @@ def add_nodes_to_graph(
     atom_type = protein_df["atom_name"]
     nodes = protein_df["node_id"]
     element_symbol = protein_df["element_symbol"]
+    record_name = protein_df["record_name"]
     G.add_nodes_from(nodes)
 
     # Set intrinsic node attributes
@@ -36,6 +37,7 @@ def add_nodes_to_graph(
     )
     nx.set_node_attributes(G, dict(zip(nodes, coords)), "coords")
     nx.set_node_attributes(G, dict(zip(nodes, b_factor)), "b_factor")
+    nx.set_node_attributes(G, dict(zip(nodes, record_name)), "record_name")
 
     if verbose:
         print(G)

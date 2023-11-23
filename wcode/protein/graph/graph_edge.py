@@ -1,14 +1,21 @@
+import tempfile
+import os
 import pandas as pd
-from wcode.protein.convert import filter_dataframe
+from rdkit import Chem
+from wcode.protein.convert import filter_dataframe, save_pdb_df_to_pdb
 from wcode.protein.constant import *
 from wcode.protein.graph.graph_distance import *
+from copy import deepcopy
 import networkx as nx
 import numpy as np
+import pandas as pd
+from biopandas.pdb import PandasPdb
 
 # https://github.com/a-r-j/graphein/blob/master/graphein/protein/graphs.py
 ########################################################################################################################
 
 ########################################################################################################################
+
 
 class EDGE_CONSTRUCTION_FUNCS():
     def __init__(self, **kwargs):
@@ -47,7 +54,7 @@ class EDGE_CONSTRUCTION_FUNCS():
                 else:
                     G.add_edge(n1, n2, kind={"distance_threshold"})
 
-    def add_atomic_edges(self,  G: nx.Graph) -> nx.Graph:
+    def add_atm_covalent_edges(self, G: nx.Graph) -> nx.Graph:
         dist_mat = compute_distmat(G.graph["pdb_df"])
 
         G.graph["pdb_df"] = assign_bond_states_to_dataframe(G.graph["pdb_df"])
@@ -86,6 +93,30 @@ class EDGE_CONSTRUCTION_FUNCS():
 
         return G
 
+    def add_hetatm_covalent_edges(self, G: nx.Graph) -> nx.Graph:
+        if len(G.graph['keep_hets']) == 0:
+            return G
+        else:
+            for h_group in G.graph['keep_hets']:
+                df_het = deepcopy(G.graph['pdb_df'])
+                df_het = df_het.loc[df_het['record_name'] == 'HETATM']
+                t = tempfile.mkdtemp()
+                het_file_name = os.path.join(t, h_group+'.pdb')
+                save_pdb_df_to_pdb(df_het, het_file_name)
+                mol = Chem.MolFromPDBFile(het_file_name)
+                mol_idx_to_graph_nodeid = {atom.GetIdx(): nodeid for atom, nodeid in zip(mol.GetAtoms(), df_het['node_id'])}
+
+                for bond in mol.GetBonds():
+                    n1, n2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+                    n1 = mol_idx_to_graph_nodeid[n1]
+                    n2 = mol_idx_to_graph_nodeid[n2]
+                    if G.has_edge(n1, n2):
+                        G.edges[n1, n2]["kind"].add("covalent")
+                        G.edges[n1, n2]["covalent"] = bond
+                    else:
+                        G.add_edge(n1, n2, kind={"covalent"}, bond=bond)
+            return G
+
 
 def assign_bond_states_to_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     naive_bond_states = pd.Series(df["atom_name"].map(DEFAULT_BOND_STATE))
@@ -103,6 +134,66 @@ def assign_bond_states_to_dataframe(df: pd.DataFrame) -> pd.DataFrame:
 def assign_covalent_radii_to_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df["covalent_radius"] = df["atom_bond_state"].map(COVALENT_RADII)
     return df
+
+
+def add_atm_bond_order(G: nx.Graph) -> nx.Graph:
+    for u, v, a in G.edges(data=True):
+        if G.nodes[u]['record_name'] != 'ATOM' or G.nodes[v]['record_name'] != 'ATOM':
+            continue
+        if 'covalent' not in G.edges[u, v]["kind"]:
+            continue
+        atom_a = G.nodes[u]["element_symbol"]
+        atom_b = G.nodes[v]["element_symbol"]
+
+        # Assign bonds with hydrogens to 1
+        if atom_a == "H" or atom_b == "H":
+            G.edges[u, v]["kind"].add("SINGLE")
+        # If not, we need to identify the bond type from the bond length
+        else:
+            query = f"{atom_a}-{atom_b}"
+            # We need this try block as the dictionary keys may be X-Y, whereas
+            # the query we construct may be Y-X
+            try:
+                identify_bond_type_from_mapping(G, u, v, a, query)
+            except KeyError:
+                query = f"{atom_b}-{atom_a}"
+                try:
+                    identify_bond_type_from_mapping(G, u, v, a, query)
+                except KeyError:
+                    print(
+                        f"Could not identify bond type for {query}. Adding a \
+                            single bond."
+                    )
+                    G.edges[u, v]["kind"].add("SINGLE")
+
+    return G
+
+
+def identify_bond_type_from_mapping(
+    G: nx.Graph,
+    u: str,
+    v: str,
+    a: Dict,
+    query: str
+):
+    allowable_order = BOND_ORDERS[query]
+    # If max double, compare the length to the double watershed distance, w_sd,
+    # else assign single
+    if len(allowable_order) == 2:
+        if a["bond_length"] < BOND_LENGTHS[query]["w_sd"]:
+            G.edges[u, v]["kind"].add("DOUBLE")
+        else:
+            G.edges[u, v]["kind"].add("SINGLE")
+    else:
+        # If max triple, compare the length to the triple watershed distance,
+        # w_dt, then double, else assign single
+        if a["bond_length"] < BOND_LENGTHS[query]["w_dt"]:
+            G.edges[u, v]["kind"].add("TRIPLE")
+        elif a["bond_length"] < BOND_LENGTHS[query]["w_sd"]:
+            G.edges[u, v]["kind"].add("DOUBLE")
+        else:
+            G.edges[u, v]["kind"].add("SINGLE")
+    return G
 
 
 def add_distance_to_edges(G: nx.Graph) -> nx.Graph:

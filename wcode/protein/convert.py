@@ -292,7 +292,6 @@ def process_dataframe(
 
     return protein_df
 
-
 if __name__ == '__main__':
     df = read_pdb_to_dataframe('/mnt/d/tmp/5p21.pdb',
                                keep_hets=['GNP'],

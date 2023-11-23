@@ -1,10 +1,8 @@
-import biopandas # pip install biopandas
-
-import pandas as pd
 from biopandas.pdb import PandasPdb
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Union
 import os
 from pathlib import Path
+from wcode.protein.graph.graph_distance import *
 
 
 # https://github.com/a-r-j/graphein/blob/master/graphein/protein/graphs.py
@@ -219,6 +217,7 @@ def process_dataframe(
     alt_locs: bool = False,
     deprotonate: bool = True,
     keep_hets: List[str] = [],
+    pocket_only = False,
 ) -> pd.DataFrame:
 
     protein_df = label_node_id(protein_df)
@@ -266,10 +265,40 @@ def process_dataframe(
     # Sort dataframe to place HETATMs
     protein_df = sort_dataframe(protein_df)
 
+    if pocket_only:
+        if 'HETATM' not in protein_df['record_name'].unique():
+            pass
+        else:
+            retain_residue_numbers = []
+            dist_mat =compute_distmat(protein_df)
+            interacting_nodes = get_interacting_atoms(10, distmat=dist_mat)
+            interacting_nodes = list(zip(interacting_nodes[0], interacting_nodes[1]))
+
+            for a1, a2 in interacting_nodes:
+                n1 = protein_df.loc[a1, "record_name"]
+                n2 = protein_df.loc[a2, "record_name"]
+                n1_position = protein_df.loc[a1, "residue_number"]
+                n2_position = protein_df.loc[a2, "residue_number"]
+                if n1 == 'ATOM' and n2 == 'HETATM':
+                    retain_residue_numbers.extend([n1_position, n2_position])
+
+            retain_residue_numbers = list(set(retain_residue_numbers))
+            protein_df = filter_dataframe(
+                protein_df,
+                by_column="residue_number",
+                list_of_values=retain_residue_numbers,
+                boolean=True,
+            )
+
     return protein_df
 
 
 if __name__ == '__main__':
-    df = read_pdb_to_dataframe('/mnt/d/tmp/3rab.pdb', granularity="centroids")
-    df.to_excel('/mnt/d/tmp/3rab.xlsx')
-    # save_pdb_df_to_pdb(df, '/mnt/d/tmp/3rab_2.pdb')
+    df = read_pdb_to_dataframe('/mnt/d/tmp/5p21.pdb',
+                               keep_hets=['GNP'],
+                               pocket_only=True)
+    dist_mat = compute_distmat(df)
+    dist_mat = dist_mat[dist_mat > 10]
+    print(np.nan_to_num(dist_mat))
+    df.to_excel('/mnt/d/tmp/5p21.xlsx')
+    save_pdb_df_to_pdb(df, '/mnt/d/tmp/5p21_2.pdb')

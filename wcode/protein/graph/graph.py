@@ -13,11 +13,18 @@ import numpy as np
 
 
 def construct_graph(path,
-                    compute_edge_funcs = ["EDGE_CONSTRUCTION_FUNCS(threshold=3.0).add_edges_with_distance_threshold"],
+                    compute_edge_funcs=None,
+                    keep_hets=[],
+                    pocket_only=False,
                     verbose=False):
+    if compute_edge_funcs is None:
+        compute_edge_funcs = ["EDGE_CONSTRUCTION_FUNCS(threshold=3.0).add_edges_with_distance_threshold",
+                              "EDGE_CONSTRUCTION_FUNCS().add_atomic_edges"]
     if path is not None and isinstance(path, Path):
         path = os.fsdecode(path)
-    df = read_pdb_to_dataframe(path)
+    df = read_pdb_to_dataframe(path,
+                               keep_hets=keep_hets,
+                               pocket_only=pocket_only)
     g = initialise_graph_with_metadata(protein_df=df)
     g = add_nodes_to_graph(g, verbose=verbose)
     for f in compute_edge_funcs:
@@ -71,8 +78,14 @@ def three_to_one_with_mods(res):
 
 
 if __name__ == '__main__':
-    g = construct_graph('/mnt/d/tmp/3rab.pdb', verbose=True)
+    g = construct_graph('/mnt/d/tmp/5p21.pdb',
+                        verbose=True,
+                        keep_hets=['GNP'],
+                        pocket_only=True)
     # print(g)
     # print(list(g.edges))
-    for u, v, data in g.edges(data=True):
-        print(f"边 ({u}, {v}) 的属性为: {data}")
+    # print(g)
+    # for n, data in g.nodes(data=True):
+    #     print(n)
+    # for u, v, data in g.edges(data=True):
+    #     print(f"边 ({u}, {v}) 的属性为: {data}")

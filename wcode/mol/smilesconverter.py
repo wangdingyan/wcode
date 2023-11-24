@@ -12,7 +12,7 @@ from six.moves.urllib.parse import quote
 """Standardize molecule and convert between identifier."""
 
 
-class Converter():
+class SmilesConverter():
     """Converter class."""
 
     def __init__(self):
@@ -130,7 +130,7 @@ class Converter():
                 ctdid + '/cids/TXT/'
             pubchemcid = urlopen(url).read().rstrip().decode()
         except Exception as ex:
-            Converter.__log.warning(str(ex))
+            SmilesConverter.__log.warning(str(ex))
             raise ConversionError("Cannot fetch PubChemID CID from CTD", ctdid)
         # get smiles
         try:
@@ -138,7 +138,7 @@ class Converter():
                 'cid/%s/property/CanonicalSMILES/TXT/' % pubchemcid
             smiles = urlopen(url).read().rstrip().decode()
         except Exception as ex:
-            Converter.__log.warning(str(ex))
+            SmilesConverter.__log.warning(str(ex))
             raise ConversionError(
                 "Cannot fetch SMILES from PubChemID CID", pubchemcid)
         return smiles
@@ -148,10 +148,10 @@ class Converter():
         """From Chemical Name to SMILES via cactus.nci or pubchem."""
         smiles = None
         chem_name_quoted = quote(chem_name)
-        smiles = Converter._chemical_name_to_smiles_cactus(chem_name_quoted)
+        smiles = SmilesConverter._chemical_name_to_smiles_cactus(chem_name_quoted)
         if smiles is not None:
             return smiles
-        smiles = Converter._chemical_name_to_smiles_pubchem(chem_name)
+        smiles = SmilesConverter._chemical_name_to_smiles_pubchem(chem_name)
         if smiles is None:
             raise ConversionError(
                 "Cannot fetch SMILES from Chemical Name", chem_name)
@@ -162,10 +162,10 @@ class Converter():
         """From Chemical Name to InChI via cactus.nci or pubchem."""
         inchi = None
         chem_name_quoted = quote(chem_name)
-        inchi = Converter._chemical_name_to_inchi_cactus(chem_name_quoted)
+        inchi = SmilesConverter._chemical_name_to_inchi_cactus(chem_name_quoted)
         if inchi is not None:
             return inchi
-        inchi = Converter._chemical_name_to_inchi_pubchem(chem_name)
+        inchi = SmilesConverter._chemical_name_to_inchi_pubchem(chem_name)
         if inchi is None:
             raise ConversionError(
                 "Cannot fetch InChI from Chemical Name", chem_name)
@@ -186,9 +186,9 @@ class Converter():
         #         return res[inchikey]
 
         resolve_fns = {
-            'unichem': Converter._resove_inchikey_unichem,
-            'cactus': Converter._resove_inchikey_cactus,
-            'pubchem': Converter._resove_inchikey_pubchem,
+            'unichem': SmilesConverter._resove_inchikey_unichem,
+            'cactus': SmilesConverter._resove_inchikey_cactus,
+            'pubchem': SmilesConverter._resove_inchikey_pubchem,
         }
         inchi = None
         for provider, func in resolve_fns.items():
@@ -196,7 +196,7 @@ class Converter():
                 inchi = func(inchikey)
                 break
             except:
-                Converter.__log.debug(
+                SmilesConverter.__log.debug(
                     'InChIKey %s not found via %s' % (inchikey, provider))
                 continue
         if inchi is None:
@@ -215,7 +215,7 @@ class Converter():
             smiles = urlopen(url).read().rstrip().decode()
             return smiles
         except Exception as ex:
-            Converter.__log.warning(
+            SmilesConverter.__log.warning(
                 "Cannot convert Chemical Name "
                 "to SMILES (cactus.nci): %s" % chem_name)
             return None
@@ -229,7 +229,7 @@ class Converter():
             inchi = urlopen(url).read().rstrip().decode()
             return inchi
         except Exception as ex:
-            Converter.__log.warning(
+            SmilesConverter.__log.warning(
                 "Cannot convert Chemical Name "
                 "to InChI (cactus.nci): %s" % chem_name)
             return None

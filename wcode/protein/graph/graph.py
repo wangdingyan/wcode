@@ -93,9 +93,11 @@ if __name__ == '__main__':
     #     print(f"节点 {n} 的属性为: {data}")
     # for u, v, data in g.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
-
+    import torch
     data = {"node_id": list(G.nodes())}
     G = nx.convert_node_labels_to_integers(G)
-    for u, v, data in G.edges(data=True):
-        print(f"边 ({u}, {v}) 的属性为: {data}")
+
+    print(list(G.edges(data=True)))
+    # for u, v, data in G.edges(data=True):
+    #     print(f"边 ({u}, {v}) 的属性为: {data}")
 

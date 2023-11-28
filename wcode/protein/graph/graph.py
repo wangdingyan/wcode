@@ -149,8 +149,8 @@ if __name__ == '__main__':
     g = construct_graph('C:\\tmp\\PDBBind_processed\\1a0t\\1a0t_protein_processed.pdb',
                         'C:\\tmp\\PDBBind_processed\\1a0t\\1a0t_ligand.sdf',
                         pocket_only=True)
-    for u, v, data in g.edges(data=True):
-        print(f"边 ({u}, {v}) 的属性为: {data}")
-    # for n, data in g.nodes(data=True):
-    #     print(f"节点 {n} 的属性为: {data}")
+    # for u, v, data in g.edges(data=True):
+    #     print(f"边 ({u}, {v}) 的属性为: {data}")
+    for n, data in g.nodes(data=True):
+        print(f"节点 {n} 的属性为: {data}")
 

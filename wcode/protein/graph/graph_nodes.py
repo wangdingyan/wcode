@@ -67,7 +67,7 @@ def add_nodes_to_graph(
     nx.set_node_attributes(G, dict(zip(nodes, b_factor)), "b_factor")
 
     nx.set_node_attributes(G, dict(zip(nodes, record_name)), "record_name")
-    nx.set_node_attributes(G, dict(zip(nodes, record_encoding_one_hot)), "element_symbol_one_hot")
+    nx.set_node_attributes(G, dict(zip(nodes, record_encoding_one_hot)), "record_symbol_one_hot")
 
     if verbose:
         print(G)
@@ -87,4 +87,4 @@ class one_of_k_encoding_unk():
     def __call__(self, x):
         if x not in self.allowable_set:
             x = self.allowable_set[-1]
-        return np.array([x == s for s in self.allowable_set]).astype(np.float32).sum()
+        return np.array([x == s for s in self.allowable_set]).astype(np.float32)

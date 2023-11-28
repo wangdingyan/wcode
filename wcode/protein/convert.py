@@ -273,7 +273,7 @@ def process_dataframe(
         if 'HETATM' not in protein_df['record_name'].unique():
             pass
         else:
-            retain_residue_numbers = []
+            retain_residue_ids = []
             dist_mat =compute_distmat(protein_df)
             interacting_nodes = get_interacting_atoms(10, distmat=dist_mat)
             interacting_nodes = list(zip(interacting_nodes[0], interacting_nodes[1]))
@@ -281,16 +281,16 @@ def process_dataframe(
             for a1, a2 in interacting_nodes:
                 n1 = protein_df.loc[a1, "record_name"]
                 n2 = protein_df.loc[a2, "record_name"]
-                n1_position = protein_df.loc[a1, "residue_number"]
-                n2_position = protein_df.loc[a2, "residue_number"]
+                n1_id = protein_df.loc[a1, "residue_id"]
+                n2_id = protein_df.loc[a2, "residue_id"]
                 if n1 == 'ATOM' and n2 == 'HETATM':
-                    retain_residue_numbers.extend([n1_position, n2_position])
+                    retain_residue_ids.extend([n1_id, n2_id])
 
-            retain_residue_numbers = list(set(retain_residue_numbers))
+            retain_residue_ids = list(set(retain_residue_ids))
             protein_df = filter_dataframe(
                 protein_df,
-                by_column="residue_number",
-                list_of_values=retain_residue_numbers,
+                by_column="residue_id",
+                list_of_values=retain_residue_ids,
                 boolean=True,
             )
 

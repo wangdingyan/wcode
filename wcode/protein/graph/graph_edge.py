@@ -73,10 +73,11 @@ class EDGE_CONSTRUCTION_FUNCS():
             n1 = mol_idx_to_graph_nodeid[n1]
             n2 = mol_idx_to_graph_nodeid[n2]
             if G.has_edge(n1, n2):
-                G.edges[n1, n2]["kind"].add("covalent")
-                G.edges[n1, n2]["rdkiit_covalent"] = get_bond_features(bond)
+                if not "covalent" in G.edges[n1, n2]["kind"]:
+                    G.edges[n1, n2]["kind"].add("covalent")
+                G.edges[n1, n2]["bond_feature"] = get_bond_features(bond)
             else:
-                G.add_edge(n1, n2, kind={"rdkiit_covalent"}, bond=get_bond_features(bond))
+                G.add_edge(n1, n2, kind={"covalent"}, bond_feature=get_bond_features(bond))
         return G
 
     def add_hetatm_covalent_edges(self, G: nx.Graph) -> nx.Graph:
@@ -90,10 +91,8 @@ class EDGE_CONSTRUCTION_FUNCS():
                 het_file_name = os.path.join(t, h_group+'.sdf')
                 save_pdb_df_to_pdb(df_het, het_file_name)
                 mol = Chem.MolFromPDBFile(het_file_name)
-                # print(Chem.MolToSmiles(mol))
                 template = Chem.MolFromSmiles(self.ligand_smiles)
                 mol = AllChem.AssignBondOrdersFromTemplate(template, mol)
-                # print(Chem.MolToSmiles(mol))
                 mol_idx_to_graph_nodeid = {atom.GetIdx(): nodeid for atom, nodeid in zip(mol.GetAtoms(), df_het['node_id'])}
 
                 for bond in mol.GetBonds():
@@ -101,10 +100,11 @@ class EDGE_CONSTRUCTION_FUNCS():
                     n1 = mol_idx_to_graph_nodeid[n1]
                     n2 = mol_idx_to_graph_nodeid[n2]
                     if G.has_edge(n1, n2):
-                        G.edges[n1, n2]["kind"].add("covalent")
-                        G.edges[n1, n2]["covalent"] = get_bond_features(bond)
+                        if not "covalent" in G.edges[n1, n2]["kind"]:
+                            G.edges[n1, n2]["kind"].add("covalent")
+                        G.edges[n1, n2]["bond_feature"] = get_bond_features(bond)
                     else:
-                        G.add_edge(n1, n2, kind={"covalent"}, bond=get_bond_features(bond))
+                        G.add_edge(n1, n2, kind={"covalent"}, bond_feature=get_bond_features(bond))
             return G
 
     # def add_atm_covalent_edges(self, G: nx.Graph) -> nx.Graph:

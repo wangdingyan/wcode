@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from pathlib import Path
-from wcode.protein.convert import read_pdb_to_dataframe, filter_dataframe #, three_to_one_with_mods
+from wcode.protein.convert import read_pdb_to_dataframe, filter_dataframe, save_pdb_df_to_pdb
 from wcode.protein.constant import BACKBONE_ATOMS, RESI_THREE_TO_1
 from wcode.protein.graph.graph_nodes import add_nodes_to_graph
 from wcode.protein.graph.graph_edge import add_distance_to_edges, EDGE_CONSTRUCTION_FUNCS
@@ -39,6 +39,7 @@ def construct_graph(protein_path,
     df = read_pdb_to_dataframe(output_path,
                                keep_hets=keep_hets,
                                pocket_only=pocket_only)
+
     g = initialise_graph_with_metadata(protein_df=df,
                                        keep_hets=keep_hets)
     g = add_nodes_to_graph(g, verbose=verbose)
@@ -47,9 +48,7 @@ def construct_graph(protein_path,
     g = add_distance_to_edges(g)
     return g
 
-
 ########################################################################################################################
-
 
 def initialise_graph_with_metadata(
     protein_df: pd.DataFrame,
@@ -108,7 +107,6 @@ def merge_protein_ligand_file(protein_file,
         lines = f.readlines()
         for i, line in enumerate(lines):
             if line.startswith('ATOM'):
-                chain_identifiler = line[21]
                 res_num = int(line[22:26])
 
         res_num += 1
@@ -116,7 +114,7 @@ def merge_protein_ligand_file(protein_file,
         for i, line in enumerate(lines):
             if line.startswith('HETATM'):
                 line = list(line)
-                line[21] = chain_identifiler
+                line[21] = 'Z'
                 line[17], line[18], line[19] = 'L', 'I', 'G'
                 line[22], line[23], line[24], line[25] = res_num
                 line = "".join(line)
@@ -148,10 +146,11 @@ if __name__ == '__main__':
     # for u, v, data in G.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
 
-    g = construct_graph('/mnt/d/PDBBind/PDBBind_processed/1a0q/1a0q_protein_processed.pdb',
-                        '/mnt/d/PDBBind/PDBBind_processed/1a0q/1a0q_ligand.sdf')
-    # for u, v, data in g.edges(data=True):
-    #     print(f"边 ({u}, {v}) 的属性为: {data}")
+    g = construct_graph('C:\\tmp\\PDBBind_processed\\1a0t\\1a0t_protein_processed.pdb',
+                        'C:\\tmp\\PDBBind_processed\\1a0t\\1a0t_ligand.sdf',
+                        pocket_only=True)
+    for u, v, data in g.edges(data=True):
+        print(f"边 ({u}, {v}) 的属性为: {data}")
     # for n, data in g.nodes(data=True):
     #     print(f"节点 {n} 的属性为: {data}")
 

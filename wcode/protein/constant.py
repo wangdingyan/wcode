@@ -3130,3 +3130,17 @@ Dictionary containing bond lengths and angles for sidechains.
 
 Sourced from SideChainNet: https://github.com/jonathanking/sidechainnet/blob/master/sidechainnet/structure/build_info.py
 """
+
+ATOM_SYMBOL = [
+            'B',
+            'C',
+            'N',
+            'O',
+            'F',
+            'Si',
+            'P',
+            'S',
+            'Cl',
+            'Br',
+            'I',
+            'other']

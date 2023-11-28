@@ -34,6 +34,7 @@ def read_pdb_to_dataframe(
         raise ValueError(f"No model found for index: {model_index}")
 
     df = pd.concat([atomic_df.df["ATOM"], atomic_df.df["HETATM"]])
+
     df = process_dataframe(df, **kwargs)
     return df
 
@@ -54,6 +55,9 @@ def save_pdb_df_to_pdb(
     if hetatms:
         ppd.df["HETATM"] = hetatm_df
     ppd.to_pdb(path=path, records=None, gz=gz, append_newline=True)
+
+
+
 
 
 ########################################################################################################################

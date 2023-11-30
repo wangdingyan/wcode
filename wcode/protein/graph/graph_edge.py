@@ -90,7 +90,7 @@ class EDGE_CONSTRUCTION_FUNCS():
                 df_het = deepcopy(G.graph['pdb_df'])
                 df_het = df_het.loc[df_het['record_name'] == 'HETATM']
                 with TemporaryDirectory() as t:
-                    het_file_name = os.path.join(t, h_group+'.sdf')
+                    het_file_name = os.path.join(t, h_group+'.pdb')
                     save_pdb_df_to_pdb(df_het, het_file_name)
                     mol = Chem.MolFromPDBFile(het_file_name)
                     template = Chem.MolFromSmiles(self.ligand_smiles)

@@ -1,3 +1,4 @@
+import copy
 import os
 import pandas as pd
 from pathlib import Path
@@ -22,6 +23,7 @@ def construct_graph(protein_path,
                     pocket_only=False,
                     verbose=False):
 
+    keep_hets = copy.deepcopy(keep_hets)
     if ligand_path:
         keep_hets.append('LIG')
         output_path, ligand_smiles = merge_protein_ligand_file(protein_path, ligand_path)

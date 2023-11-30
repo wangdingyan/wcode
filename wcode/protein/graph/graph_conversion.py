@@ -161,12 +161,31 @@ class GraphFormatConvertor:
 
 ########################################################################################################################
 
-g = construct_graph('D:\\PDBBind\\PDBBind_processed\\1a0t\\1a0t_protein_processed.pdb',
-                    'D:\\PDBBind\\PDBBind_processed\\1a0t\\1a0t_ligand.sdf',
-                              pocket_only=True)
-converter = GraphFormatConvertor()
-G = converter.convert_nx_to_pyg(g)
-
-print(G)
+# g = construct_graph('C:\\database\\PDBBind\\PDBBind_processed\\1a0t\\1a0t_protein_processed.pdb',
+#                     'C:\\database\\PDBBind\\PDBBind_processed\\1a0t\\1a0t_ligand.sdf',
+#                               pocket_only=True)
+# converter = GraphFormatConvertor()
+# G = converter.convert_nx_to_pyg(g)
+#
+# print(G)
+# from torch import isclose
+# print(isclose(G['coords'], G['rdkit_atom_feature'][:, -3:], atol=0.1).all())
+import os
 from torch import isclose
-print(isclose(G['coords'], G['rdkit_atom_feature'][:, -3:], atol=0.1).all())
+names = os.listdir('C:\database\PDBBind\PDBBind_processed')
+for name in names:
+    try:
+        print(name)
+        g = construct_graph(f'C:\\database\\PDBBind\\PDBBind_processed\\{name}\\{name}_protein_processed.pdb',
+                            f'C:\\database\\PDBBind\\PDBBind_processed\\{name}\\{name}_ligand.sdf',
+                                      pocket_only=True)
+        converter = GraphFormatConvertor()
+        G = converter.convert_nx_to_pyg(g)
+        torch.save(G, f'C:\\database\\PDBBind\\PDBBind_processed\\{name}\\{name}_pyg.pt')
+        with open('C:\\tmp\\check.txt', 'a') as f:
+            check = isclose(G['coords'], G['rdkit_atom_feature'][:, -3:], atol=0.1).all()
+            f.write(f'{name} {check}\n')
+    except:
+        with open('C:\\tmp\\check.txt', 'a') as f:
+            check = isclose(G['coords'], G['rdkit_atom_feature'][:, -3:], atol=0.1).all()
+            f.write(f'{name} Fail\n')

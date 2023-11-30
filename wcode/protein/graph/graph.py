@@ -42,7 +42,9 @@ def construct_graph(protein_path,
 
     g = initialise_graph_with_metadata(protein_df=df,
                                        keep_hets=keep_hets)
+
     g = add_nodes_to_graph(g, verbose=verbose)
+
     for f in compute_edge_funcs:
         eval(f)(g)
     g = add_distance_to_edges(g)
@@ -146,11 +148,11 @@ if __name__ == '__main__':
     # for u, v, data in G.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
 
-    g = construct_graph('C:\\tmp\\PDBBind_processed\\1a0t\\1a0t_protein_processed.pdb',
-                        'C:\\tmp\\PDBBind_processed\\1a0t\\1a0t_ligand.sdf',
+    g = construct_graph('D:\\PDBBind\\PDBBind_processed\\1a0q\\1a0q_protein_processed.pdb',
+                    'D:\\PDBBind\\PDBBind_processed\\1a0q\\1a0q_ligand.sdf',
                         pocket_only=True)
-    for u, v, data in g.edges(data=True):
-        print(f"边 ({u}, {v}) 的属性为: {data}")
-    # for n, data in g.nodes(data=True):
-    #     print(f"节点 {n} 的属性为: {data}")
+    # for u, v, data in g.edges(data=True):
+    #     print(f"边 ({u}, {v}) 的属性为: {data}")
+    for n, data in g.nodes(data=True):
+        print(f"节点 {n} 的属性为: {data}")
 

@@ -11,11 +11,21 @@ from wcode.protein.graph.graph import construct_graph
 class GraphFormatConvertor:
     def __init__(self):
         columns = [
-            "edge_index",
+            # node feature
             "coords",
+            "node_id",
+            "residue_name_one_hot",
+            ""
+
+            # edge feature
+
+            "edge_index",
+
             "distance",
             "bond_feature",
-            "node_id",
+            "edge_index_covalent",
+            "edge_index_distance_threshold",
+            "node_id"
         ]
         self.columns = columns
         self.type2form = {
@@ -44,6 +54,7 @@ class GraphFormatConvertor:
 
         # Add node features
         node_feature_names = G.nodes(data=True)[0].keys()
+        print(node_feature_names)
         for i, (_, feat_dict) in enumerate(G.nodes(data=True)):
             for key, value in feat_dict.items():
                 key = str(key)
@@ -144,9 +155,9 @@ class GraphFormatConvertor:
 
 ########################################################################################################################
 
-g = construct_graph('C:\\tmp\\PDBBind_processed\\1a0t\\1a0t_protein_processed.pdb',
-                    'C:\\tmp\\PDBBind_processed\\1a0t\\1a0t_ligand.sdf',
-                        pocket_only=True)
+g = construct_graph('D:\\PDBBind\\PDBBind_processed\\1a0t\\1a0t_protein_processed.pdb',
+                    'D:\\PDBBind\\PDBBind_processed\\1a0t\\1a0t_ligand.sdf',
+                              pocket_only=True)
 converter = GraphFormatConvertor()
 G = converter.convert_nx_to_pyg(g)
 print(G)

@@ -3,10 +3,10 @@ import torch
 from rdkit import Chem
 from rdkit.Chem import Atom, Mol
 from typing import List, Any, Mapping
+from copy import deepcopy
 import numpy as np
 
 ########################################################################################################################
-
 def get_atom_features(atom: Atom):
     symbol = atom.GetSymbol()
     features = {
@@ -68,7 +68,7 @@ FEATURE_INFORM = OrderedDict([
 
 # fmt: off
 ALLOWABLE_ATOM_FEATURES: Mapping[str, List[Any]] = {
-    "atomic_num": list(range(1, 119)) + ["misc"],  # type: ignore[list-item]
+    "atomic_num": [1, 6, 7, 8, 9, 12, 14, 15, 16, 17, 19, 30, 35, 53] + ["misc"],  # type: ignore[list-item]
     "chirality": [
         "CHI_UNSPECIFIED",
         "CHI_TETRAHEDRAL_CW",
@@ -184,8 +184,13 @@ def safe_index(allowable_list: List[Any], value: Any) -> int:
 def featurize_atom(atom: Chem.Atom) -> torch.Tensor:
     return torch.tensor(
         [
-            safe_index(ALLOWABLE_ATOM_FEATURES["atomic_num"], atom.GetAtomicNum()),
+            ALLOWABLE_ATOM_FEATURES["is_aromatic"].index(atom.GetIsAromatic()),
+            ALLOWABLE_ATOM_FEATURES["is_in_ring"].index(atom.IsInRing()),
             ALLOWABLE_ATOM_FEATURES["chirality"].index(str(atom.GetChiralTag())),
+            safe_index(
+                ALLOWABLE_ATOM_FEATURES["hybridization"], str(atom.GetHybridization())
+            ),
+            safe_index(ALLOWABLE_ATOM_FEATURES["atomic_num"], atom.GetAtomicNum()),
             safe_index(ALLOWABLE_ATOM_FEATURES["degree"], atom.GetTotalDegree()),
             safe_index(
                 ALLOWABLE_ATOM_FEATURES["formal_charge"], atom.GetFormalCharge()
@@ -194,17 +199,41 @@ def featurize_atom(atom: Chem.Atom) -> torch.Tensor:
             safe_index(
                 ALLOWABLE_ATOM_FEATURES["num_radical_e"], atom.GetNumRadicalElectrons()
             ),
-            safe_index(
-                ALLOWABLE_ATOM_FEATURES["hybridization"], str(atom.GetHybridization())
-            ),
-            ALLOWABLE_ATOM_FEATURES["is_aromatic"].index(atom.GetIsAromatic()),
-            ALLOWABLE_ATOM_FEATURES["is_in_ring"].index(atom.IsInRing()),
+            np.array(coords(atom))[0],
+            np.array(coords(atom))[1],
+            np.array(coords(atom))[2],
         ],
-        dtype=torch.long,
+        dtype=torch.float,
     )
 
 
+def featurize_atom_one_hot(atom):
+    output = np.concatenate([
+        one_of_k_encoding_unk(ALLOWABLE_ATOM_FEATURES["is_aromatic"])(atom.GetIsAromatic()),
+        one_of_k_encoding_unk(ALLOWABLE_ATOM_FEATURES["is_in_ring"])(atom.IsInRing()),
+        one_of_k_encoding_unk(ALLOWABLE_ATOM_FEATURES["chirality"])(str(atom.GetChiralTag())),
+        one_of_k_encoding_unk(ALLOWABLE_ATOM_FEATURES["hybridization"])(str(atom.GetHybridization())),
+        one_of_k_encoding_unk(ALLOWABLE_ATOM_FEATURES["atomic_num"])(atom.GetAtomicNum()),
+        one_of_k_encoding_unk(ALLOWABLE_ATOM_FEATURES["degree"])(atom.GetTotalDegree()),
+        one_of_k_encoding_unk(ALLOWABLE_ATOM_FEATURES["formal_charge"])(atom.GetFormalCharge()),
+        one_of_k_encoding_unk(ALLOWABLE_ATOM_FEATURES["num_hs"])(atom.GetTotalNumHs()),
+        one_of_k_encoding_unk(ALLOWABLE_ATOM_FEATURES["num_radical_e"])(atom.GetNumRadicalElectrons()),
+    ])
 
+    return output
+
+class one_of_k_encoding_unk():
+    def __init__(self,
+                 allowable_set,
+                 append_UNK=True):
+
+        self.allowable_set = deepcopy(allowable_set)
+        if append_UNK:
+            self.allowable_set.append('UNK')
+    def __call__(self, x):
+        if x not in self.allowable_set:
+            x = self.allowable_set[-1]
+        return np.array([x == s for s in self.allowable_set]).astype(np.float32)
 
 if __name__ == '__main__':
     mol = Chem.MolFromSmiles('COCCC')

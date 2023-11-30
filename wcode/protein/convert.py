@@ -183,7 +183,8 @@ def select_chains(
 
 def sort_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return df.sort_values(
-        by=["chain_id", "residue_number", "atom_number", "insertion"]
+        # by=["residue_number", "chain_id", "atom_number", "insertion"]
+        by = ["atom_number"]
     )
 
 

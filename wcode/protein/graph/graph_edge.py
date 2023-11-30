@@ -1,9 +1,10 @@
-import tempfile
+from tempfile import TemporaryDirectory
 import os
 from rdkit import Chem
 from wcode.protein.convert import filter_dataframe, save_pdb_df_to_pdb
 from wcode.protein.constant import *
 from wcode.protein.graph.graph_distance import *
+from wcode.mol._atom import featurize_atom_one_hot, featurize_atom
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -60,13 +61,13 @@ class EDGE_CONSTRUCTION_FUNCS():
         pdb_df = filter_dataframe(
             G.graph["pdb_df"], "node_id", list(G.nodes()), True
         )
-        t = tempfile.mkdtemp()
-        protein_file_name = os.path.join(t, 'protein_tmp.pdb')
-        df_file_name = os.path.join(t, 'dataframe.xlsx')
-        save_pdb_df_to_pdb(pdb_df, protein_file_name)
-        pdb_df.to_excel(df_file_name)
-        mol = Chem.MolFromPDBFile(protein_file_name)
-        mol_idx_to_graph_nodeid = {atom.GetIdx(): nodeid for atom, nodeid in zip(mol.GetAtoms(), pdb_df['node_id'])}
+        with TemporaryDirectory() as t:
+            protein_file_name = os.path.join(t, 'protein_tmp.pdb')
+            df_file_name = os.path.join(t, 'dataframe.xlsx')
+            save_pdb_df_to_pdb(pdb_df, protein_file_name)
+            pdb_df.to_excel(df_file_name)
+            mol = Chem.MolFromPDBFile(protein_file_name)
+            mol_idx_to_graph_nodeid = {atom.GetIdx(): nodeid for atom, nodeid in zip(mol.GetAtoms(), pdb_df['node_id'])}
 
         for bond in mol.GetBonds():
             n1, n2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
@@ -87,13 +88,21 @@ class EDGE_CONSTRUCTION_FUNCS():
             for h_group in G.graph['keep_hets']:
                 df_het = deepcopy(G.graph['pdb_df'])
                 df_het = df_het.loc[df_het['record_name'] == 'HETATM']
-                t = tempfile.mkdtemp()
-                het_file_name = os.path.join(t, h_group+'.sdf')
-                save_pdb_df_to_pdb(df_het, het_file_name)
-                mol = Chem.MolFromPDBFile(het_file_name)
-                template = Chem.MolFromSmiles(self.ligand_smiles)
-                mol = AllChem.AssignBondOrdersFromTemplate(template, mol)
-                mol_idx_to_graph_nodeid = {atom.GetIdx(): nodeid for atom, nodeid in zip(mol.GetAtoms(), df_het['node_id'])}
+                with TemporaryDirectory() as t:
+                    het_file_name = os.path.join(t, h_group+'.sdf')
+                    save_pdb_df_to_pdb(df_het, het_file_name)
+                    mol = Chem.MolFromPDBFile(het_file_name)
+                    template = Chem.MolFromSmiles(self.ligand_smiles)
+                    mol = AllChem.AssignBondOrdersFromTemplate(template, mol)
+                    mol_idx_to_graph_nodeid = {atom.GetIdx(): nodeid for atom, nodeid in zip(mol.GetAtoms(), df_het['node_id'])}
+
+                for atom in mol.GetAtoms():
+                    n = atom.GetIdx()
+                    n = mol_idx_to_graph_nodeid[n]
+                    feature = featurize_atom(atom)
+                    feature_one_hot = featurize_atom_one_hot(atom)
+                    G.nodes[n]['rdkit_atom_feature'] = feature
+                    G.nodes[n]['rdkit_atom_feature_onehot'] = feature_one_hot
 
                 for bond in mol.GetBonds():
                     n1, n2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()

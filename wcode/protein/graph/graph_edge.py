@@ -20,7 +20,7 @@ from wcode.mol._bond import get_bond_features
 
 class EDGE_CONSTRUCTION_FUNCS():
     def __init__(self, **kwargs):
-        self.long_interaction_threshold = 10 if "long_interaction_threshold" not in kwargs else kwargs["long_interaction_threshold"]
+        self.long_interaction_threshold = 2 if "long_interaction_threshold" not in kwargs else kwargs["long_interaction_threshold"]
         self.threshold = 5 if "threshold" not in kwargs else kwargs["threshold"]
 
         self.tolerance = 0.56 if "tolerance" not in kwargs else kwargs["tolerance"]
@@ -45,12 +45,13 @@ class EDGE_CONSTRUCTION_FUNCS():
             n1_position = G.graph["pdb_df"].loc[a1, "residue_number"]
             n2_position = G.graph["pdb_df"].loc[a2, "residue_number"]
 
-            condition_1 = n1_chain == n2_chain
+            # condition_1 = n1_chain == n2_chain
             condition_2 = (
                 abs(n1_position - n2_position) < self.long_interaction_threshold
             )
 
-            if not (condition_1 and condition_2):
+            #if not (condition_1 and condition_2):
+            if not condition_2:
                 count += 1
                 if G.has_edge(n1, n2):
                     G.edges[n1, n2]["kind"].add("distance_threshold")

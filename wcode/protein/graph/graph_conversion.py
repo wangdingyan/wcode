@@ -15,17 +15,20 @@ class GraphFormatConvertor:
             "coords",
             "node_id",
             "residue_name_one_hot",
-            ""
+            "atom_type_one_hot",
+            "record_symbol_one_hot",
+            "rdkit_atom_feature",
+            "rdkit_atom_feature_onehot",
+            "node_id"
 
             # edge feature
-
             "edge_index",
-
             "distance",
             "bond_feature",
+
+            # edge index
             "edge_index_covalent",
             "edge_index_distance_threshold",
-            "node_id"
         ]
         self.columns = columns
         self.type2form = {
@@ -54,9 +57,12 @@ class GraphFormatConvertor:
 
         # Add node features
         node_feature_names = G.nodes(data=True)[0].keys()
-        print(node_feature_names)
+
         for i, (_, feat_dict) in enumerate(G.nodes(data=True)):
             for key, value in feat_dict.items():
+                if key == 'rdkit_atom_feature':
+                    with open('C:\\tmp\\check_dimension.txt', 'a') as f:
+                        f.write(str(value)+'\n')
                 key = str(key)
                 if key in self.columns:
                     if i == 0:

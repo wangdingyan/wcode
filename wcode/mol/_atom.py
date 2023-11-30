@@ -181,10 +181,8 @@ def safe_index(allowable_list: List[Any], value: Any) -> int:
         return len(allowable_list) - 1
 
 
-def featurize_atom(atom: Chem.Atom) -> torch.Tensor:
-    return torch.tensor(
-        [
-            ALLOWABLE_ATOM_FEATURES["is_aromatic"].index(atom.GetIsAromatic()),
+def featurize_atom(atom: Chem.Atom):
+    return [ALLOWABLE_ATOM_FEATURES["is_aromatic"].index(atom.GetIsAromatic()),
             ALLOWABLE_ATOM_FEATURES["is_in_ring"].index(atom.IsInRing()),
             ALLOWABLE_ATOM_FEATURES["chirality"].index(str(atom.GetChiralTag())),
             safe_index(
@@ -201,10 +199,7 @@ def featurize_atom(atom: Chem.Atom) -> torch.Tensor:
             ),
             np.array(coords(atom))[0],
             np.array(coords(atom))[1],
-            np.array(coords(atom))[2],
-        ],
-        dtype=torch.float,
-    )
+            np.array(coords(atom))[2]]
 
 
 def featurize_atom_one_hot(atom):

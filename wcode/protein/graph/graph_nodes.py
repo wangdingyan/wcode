@@ -28,8 +28,8 @@ def add_nodes_to_graph(
         rdkit_atom_feature = []
         rdkit_atom_feature_one_hot = []
         for atom in mol.GetAtoms():
-            rdkit_atom_feature.append(str(featurize_atom(atom).tolist()))
-            rdkit_atom_feature_one_hot.append(str(featurize_atom_one_hot(atom).tolist()))
+            rdkit_atom_feature.append(featurize_atom(atom))
+            rdkit_atom_feature_one_hot.append(featurize_atom_one_hot(atom))
 
     # Assign intrinsic node attributes
     chain_id = protein_df["chain_id"].apply(str)

@@ -166,4 +166,7 @@ g = construct_graph('D:\\PDBBind\\PDBBind_processed\\1a0t\\1a0t_protein_processe
                               pocket_only=True)
 converter = GraphFormatConvertor()
 G = converter.convert_nx_to_pyg(g)
+
 print(G)
+from torch import isclose
+print(isclose(G['coords'], G['rdkit_atom_feature'][:, -3:], atol=0.1).all())

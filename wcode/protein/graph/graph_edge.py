@@ -237,5 +237,5 @@ def add_distance_to_edges(G: nx.Graph) -> nx.Graph:
     mat = np.where(nx.to_numpy_array(G), dist_mat, 0)
     node_map = {n: i for i, n in enumerate(G.nodes)}
     for u, v, d in G.edges(data=True):
-        d["distance"] = mat[node_map[u], node_map[v]]
+        d["distance"] = [mat[node_map[u], node_map[v]]]
     return G

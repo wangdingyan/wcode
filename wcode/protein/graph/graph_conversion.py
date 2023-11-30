@@ -13,7 +13,8 @@ class GraphFormatConvertor:
         columns = [
             "edge_index",
             "coords",
-            "name",
+            "distance",
+            "bond_feature",
             "node_id",
         ]
         self.columns = columns
@@ -53,8 +54,21 @@ class GraphFormatConvertor:
 
         # Add edge features
         edge_list = list(G.edges(data=True))
+        key_lenth = {}
+
+        for e in G.edges(data=True):
+            e_attr = e[2]
+            for k in e_attr.keys():
+                if k not in key_lenth:
+                    key_lenth[k] = len(e_attr[k])
+
+        for e in G.edges(data=True):
+            for k in key_lenth:
+                if k not in e[2]:
+                    e[2][k] = [-1.] * key_lenth[k]
+
         edge_feature_names = edge_list[0][2].keys() if edge_list else []
-        print(edge_feature_names)
+
         edge_feature_names = list(
             filter(
                 lambda x: x in self.columns and x != "kind", edge_feature_names
@@ -130,10 +144,9 @@ class GraphFormatConvertor:
 
 ########################################################################################################################
 
-G = construct_graph('/mnt/d/tmp/5p21.pdb',
-                    verbose=True,
-                    keep_hets=[],
-                    pocket_only=True)
+g = construct_graph('C:\\tmp\\PDBBind_processed\\1a0t\\1a0t_protein_processed.pdb',
+                    'C:\\tmp\\PDBBind_processed\\1a0t\\1a0t_ligand.sdf',
+                        pocket_only=True)
 converter = GraphFormatConvertor()
-G = converter.convert_nx_to_pyg(G)
+G = converter.convert_nx_to_pyg(g)
 print(G)

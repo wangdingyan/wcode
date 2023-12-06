@@ -92,6 +92,7 @@ class EDGE_CONSTRUCTION_FUNCS():
                 with TemporaryDirectory() as t:
                     het_file_name = os.path.join(t, h_group+'.pdb')
                     save_pdb_df_to_pdb(df_het, het_file_name)
+                    save_pdb_df_to_pdb(df_het, 'C:\\tmp\\test20231206.pdb')
                     mol = Chem.MolFromPDBFile(het_file_name)
                     template = Chem.MolFromSmiles(self.ligand_smiles.replace('/', '').replace('\\', ''))
                     mol = AllChem.AssignBondOrdersFromTemplate(template, mol)

@@ -2,6 +2,7 @@ import copy
 import json
 from rdkit import Chem
 from rdkit.Chem import AllChem, MolStandardize, Mol
+from rdkit.Chem.AllChem import RemoveHs
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.parse import quote
 
@@ -35,6 +36,26 @@ class SmilesConverter():
             self.pcp = pcp
         except ImportError:
             raise ImportError("requires pubchempy")
+
+    @staticmethod
+    def remove_all_hs(mol):
+        params = Chem.RemoveHsParameters()
+        params.removeAndTrackIsotopes = True
+        params.removeDefiningBondStereo = True
+        params.removeDegreeZero = True
+        params.removeDummyNeighbors = True
+        params.removeHigherDegrees = True
+        params.removeHydrides = True
+        params.removeInSGroups = True
+        params.removeIsotopes = True
+        params.removeMapped = True
+        params.removeNonimplicit = True
+        params.removeOnlyHNeighbors = True
+        params.removeWithQuery = True
+        params.removeWithWedgedBond = True
+        return RemoveHs(mol)
+
+
     @staticmethod
     def canonicalize_smiles(smiles, removechiral=False, kekulize=False):
         if type(smiles) is not str:

@@ -103,7 +103,6 @@ class one_of_k_encoding_unk():
                  allowable_set,
                  append_UNK=True):
         self.allowable_set = deepcopy(allowable_set)
-        self.allowable_set = allowable_set
         if append_UNK:
             self.allowable_set.append('UNK')
 

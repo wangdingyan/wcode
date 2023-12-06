@@ -35,7 +35,7 @@ def construct_graph(protein_path,
         compute_edge_funcs = ["EDGE_CONSTRUCTION_FUNCS(threshold=4.0).add_edges_with_distance_threshold",
                               "EDGE_CONSTRUCTION_FUNCS().add_covalent_edges"]
     if ligand_smiles != None:
-        compute_edge_funcs.append(f"EDGE_CONSTRUCTION_FUNCS(ligand_smiles='{ligand_smiles}').add_hetatm_covalent_edges")
+        compute_edge_funcs.append(f"EDGE_CONSTRUCTION_FUNCS(ligand_smiles=r'{ligand_smiles}').add_hetatm_covalent_edges")
     if ligand_path is None:
         output_path = protein_path
 
@@ -51,7 +51,7 @@ def construct_graph(protein_path,
     for f in compute_edge_funcs:
         eval(f)(g)
     g = add_distance_to_edges(g)
-    return g
+    return g, df
 
 ########################################################################################################################
 

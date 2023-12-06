@@ -284,13 +284,29 @@ if __name__ == '__main__':
     #                             12)
     # print(model.forward_batch(sample)[1].shape)
     import torch
+    from glob import glob
+    import os
+    files = glob('C:\\database\\PDBBind\\PDBBind_pyg_feature\\*.pt')
+    for f in files:
+        g = torch.load(f)
+        atom_feature = torch.concat([g.residue_name_one_hot,
+                                     g.atom_type_one_hot,
+                                     g.record_symbol_one_hot,
+                                     g.rdkit_atom_feature_onehot], dim=-1).float()
+        edge_index = torch.Tensor(g.edge_index).long()
+        bond_feature = torch.Tensor(g.bond_feature).float()
+        # print(torch.Tensor(g.residue_name_one_hot).shape)
+        # print(torch.Tensor(g.atom_type_one_hot).shape)
+        # print(torch.Tensor(g.record_symbol_one_hot).shape)
+        # print(torch.Tensor(g.rdkit_atom_feature_onehot).shape)
 
-    odel = GraphEmbeddingModel(3,
-                               10,
-                               0,
-                               128,
-                               12)
-    g = torch.load('C:\\database\\PDBBind\\PDBBind_processed\\1a0q\\1a0q_pyg.pt')
+        model = GraphEmbeddingModel(142,
+                                   5,
+                                   0,
+                                   128,
+                                   100)
 
-    print(g)
-
+        print(os.path.basename(f),
+              model.forward(atom_feature,
+                            edge_index,
+                            bond_feature)[1].shape)

@@ -93,7 +93,7 @@ class EDGE_CONSTRUCTION_FUNCS():
                     het_file_name = os.path.join(t, h_group+'.pdb')
                     save_pdb_df_to_pdb(df_het, het_file_name)
                     mol = Chem.MolFromPDBFile(het_file_name)
-                    template = Chem.MolFromSmiles(self.ligand_smiles)
+                    template = Chem.MolFromSmiles(self.ligand_smiles.replace('/', '').replace('\\', ''))
                     mol = AllChem.AssignBondOrdersFromTemplate(template, mol)
                     mol_idx_to_graph_nodeid = {atom.GetIdx(): nodeid for atom, nodeid in zip(mol.GetAtoms(), df_het['node_id'])}
 

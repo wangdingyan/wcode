@@ -35,8 +35,8 @@ class SmilesConverter():
             self.pcp = pcp
         except ImportError:
             raise ImportError("requires pubchempy")
-
-    def canonicalize_smiles(self, smiles, removechiral=False, kekulize=False):
+    @staticmethod
+    def canonicalize_smiles(smiles, removechiral=False, kekulize=False):
         if type(smiles) is not str:
             print("Input is not String")
             return

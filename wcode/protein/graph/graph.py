@@ -7,6 +7,7 @@ from wcode.protein.constant import BACKBONE_ATOMS, RESI_THREE_TO_1
 from wcode.protein.graph.graph_nodes import add_nodes_to_graph
 from wcode.protein.graph.graph_edge import add_distance_to_edges, EDGE_CONSTRUCTION_FUNCS
 from rdkit import Chem
+import rdkit
 
 import networkx as nx
 import numpy as np
@@ -150,8 +151,8 @@ if __name__ == '__main__':
     # for u, v, data in G.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
 
-    g = construct_graph('D:\\PDBBind\\PDBBind_processed\\1a0q\\1a0q_protein_processed.pdb',
-                    'D:\\PDBBind\\PDBBind_processed\\1a0q\\1a0q_ligand.sdf',
+    g = construct_graph('/mnt/c/database/PDBBind/PDBBind_processed/1a5h/1a5h_protein_processed.pdb',
+                    '/mnt/c/data/LGDrugAI/ligand_prep/1a5h_ligand_prep.sdf',
                         pocket_only=True)
     # for u, v, data in g.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")

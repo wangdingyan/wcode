@@ -284,6 +284,13 @@ if __name__ == '__main__':
     #                             12)
     # print(model.forward_batch(sample)[1].shape)
     import torch
+
+    odel = GraphEmbeddingModel(3,
+                               10,
+                               0,
+                               128,
+                               12)
     g = torch.load('C:\\database\\PDBBind\\PDBBind_processed\\1a0q\\1a0q_pyg.pt')
+
     print(g)
 

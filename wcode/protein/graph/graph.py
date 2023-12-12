@@ -25,9 +25,11 @@ def construct_graph(protein_path,
                     verbose=False):
 
     keep_hets = copy.deepcopy(keep_hets)
+    ligand_smiles = None
     if ligand_path:
         keep_hets.append('LIG')
         output_path, ligand_smiles = merge_protein_ligand_file(protein_path, ligand_path)
+
     if smiles:
         ligand_smiles = smiles
 

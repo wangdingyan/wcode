@@ -67,7 +67,7 @@ class EDGE_CONSTRUCTION_FUNCS():
             df_file_name = os.path.join(t, 'dataframe.xlsx')
             save_pdb_df_to_pdb(pdb_df, protein_file_name)
             pdb_df.to_excel(df_file_name)
-            mol = Chem.MolFromPDBFile(protein_file_name)
+            mol = Chem.MolFromPDBFile(protein_file_name, sanitize=False)
             mol_idx_to_graph_nodeid = {atom.GetIdx(): nodeid for atom, nodeid in zip(mol.GetAtoms(), pdb_df['node_id'])}
 
         for bond in mol.GetBonds():
@@ -92,8 +92,7 @@ class EDGE_CONSTRUCTION_FUNCS():
                 with TemporaryDirectory() as t:
                     het_file_name = os.path.join(t, h_group+'.pdb')
                     save_pdb_df_to_pdb(df_het, het_file_name)
-                    save_pdb_df_to_pdb(df_het, 'C:\\tmp\\test20231206.pdb')
-                    mol = Chem.MolFromPDBFile(het_file_name)
+                    mol = Chem.MolFromPDBFile(het_file_name, sanitize=False)
                     template = Chem.MolFromSmiles(self.ligand_smiles.replace('/', '').replace('\\', ''))
                     mol = AllChem.AssignBondOrdersFromTemplate(template, mol)
                     mol_idx_to_graph_nodeid = {atom.GetIdx(): nodeid for atom, nodeid in zip(mol.GetAtoms(), df_het['node_id'])}

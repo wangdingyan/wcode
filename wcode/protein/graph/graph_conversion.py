@@ -199,9 +199,16 @@ if __name__ == '__main__':
     from multiprocessing import freeze_support
     freeze_support()
     import os
+    from glob import glob
     from torch import isclose
     from wcode.protein.convert import save_pdb_df_to_pdb
     names = os.listdir('C:\\database\\PDBBind\\PDBBind_processed')
+    complete_names = glob('C:\\database\\PDBBind\\PDBBind_pyg_feature\\*.pt')
+    complete_names = [os.path.basename(n).split('_')[0] for n in complete_names]
+    names = [n for n in names if n not in complete_names]
+    # names = ['1ai6']
+
+    # print(len(names))
     pool = Pool(8)
     for name in names:
         pool.apply_async(func=func, args=(name,))

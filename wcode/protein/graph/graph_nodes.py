@@ -24,7 +24,7 @@ def add_nodes_to_graph(
     with TemporaryDirectory() as temp_dir:
         protein_file_name = os.path.join(temp_dir, "temp_protein.pdb")
         save_pdb_df_to_pdb(protein_df, protein_file_name)
-        mol = Chem.MolFromPDBFile(protein_file_name)
+        mol = Chem.MolFromPDBFile(protein_file_name, sanitize=False)
         rdkit_atom_feature = []
         rdkit_atom_feature_one_hot = []
         for atom in mol.GetAtoms():

@@ -287,7 +287,24 @@ if __name__ == '__main__':
     from glob import glob
     import os
     files = glob('C:\\database\\PDBBind\\PDBBind_pyg_feature\\*.pt')
-    for f in files:
+    from torch_geometric.data import Batch
+    g = Batch.from_data_list([torch.load(files[0]), torch.load(files[1])])
+    atom_feature = torch.concat([g.residue_name_one_hot,
+                                 g.atom_type_one_hot,
+                                 g.record_symbol_one_hot,
+                                 g.rdkit_atom_feature_onehot], dim=-1).float()
+    edge_index = torch.Tensor(g.edge_index).long()
+    bond_feature = torch.Tensor(g.bond_feature).float()
+    model = GraphEmbeddingModel(142,
+                               5,
+                               0,
+                               128,
+                               100)
+    print(model.forward(atom_feature,
+                        edge_index,
+                        bond_feature,
+                        node2graph=g.batch)[1].sum(dim=-1))
+    for f in files[:2]:
         g = torch.load(f)
         atom_feature = torch.concat([g.residue_name_one_hot,
                                      g.atom_type_one_hot,
@@ -295,18 +312,8 @@ if __name__ == '__main__':
                                      g.rdkit_atom_feature_onehot], dim=-1).float()
         edge_index = torch.Tensor(g.edge_index).long()
         bond_feature = torch.Tensor(g.bond_feature).float()
-        # print(torch.Tensor(g.residue_name_one_hot).shape)
-        # print(torch.Tensor(g.atom_type_one_hot).shape)
-        # print(torch.Tensor(g.record_symbol_one_hot).shape)
-        # print(torch.Tensor(g.rdkit_atom_feature_onehot).shape)
-
-        model = GraphEmbeddingModel(142,
-                                   5,
-                                   0,
-                                   128,
-                                   100)
-
-        print(os.path.basename(f),
-              model.forward(atom_feature,
+        print(model.forward(atom_feature,
                             edge_index,
-                            bond_feature)[1].shape)
+                            bond_feature,
+                            node2graph=g.batch)[1].sum(dim=-1))
+

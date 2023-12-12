@@ -170,34 +170,46 @@ class GraphFormatConvertor:
 # print(G)
 # from torch import isclose
 # print(isclose(G['coords'], G['rdkit_atom_feature'][:, -3:], atol=0.1).all())
+def func(name):
+    # if os.path.exists(f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pyg.pt'):
+    #     print("HERE WE ARE", name)
+    #     with open('C:\\tmp\\check.txt', 'a') as f:
+    #         f.write(f'{name} pass\n')
+    #     return
 
-import os
-from torch import isclose
-from wcode.protein.convert import save_pdb_df_to_pdb
-names = os.listdir('C:\\database\\PDBBind\\PDBBind_processed')
-for name in names:
-    if os.path.exists(f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pyg.pt'):
-        with open('C:\\tmp\\check.txt', 'a') as f:
-            f.write(f'{name} pass\n')
-        continue
-    try:
-        print(name)
-        g, df = construct_graph(f'C:\\database\\PDBBind\\PDBBind_processed\\{name}\\{name}_protein_processed.pdb',
-                            f'C:\\data\\LGDrugAI\\ligand_prep\\{name}_ligand_prep.sdf',
-                                      pocket_only=True)
-        converter = GraphFormatConvertor()
-        G = converter.convert_nx_to_pyg(g)
-        torch.save(G, f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pyg.pt')
-        save_pdb_df_to_pdb(df, f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pocket.pdb')
-        with open('C:\\tmp\\check.txt', 'a') as f:
-            check = isclose(G['coords'], G['rdkit_atom_feature'][:, -3:], atol=0.1).all()
-            f.write(f'{name} {check}\n')
-    except:
-        with open('C:\\tmp\\check.txt', 'a') as f:
-            f.write(f'{name} Fail\n')
+    # try:
+    print(name)
+    g, df = construct_graph(f'C:\\database\\PDBBind\\PDBBind_processed\\{name}\\{name}_protein_processed.pdb',
+                        f'C:\\data\\LGDrugAI\\ligand_prep\\{name}_ligand_prep.sdf',
+                                  pocket_only=True)
+    converter = GraphFormatConvertor()
+    G = converter.convert_nx_to_pyg(g)
+    torch.save(G, f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pyg.pt')
+    save_pdb_df_to_pdb(df, f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pocket.pdb')
+    with open('C:\\tmp\\check.txt', 'a') as f:
+        check = isclose(G['coords'], G['rdkit_atom_feature'][:, -3:], atol=0.1).all()
+        f.write(f'{name} {check}\n')
+    # except:
+    #     with open('C:\\tmp\\check.txt', 'a') as f:
+    #         f.write(f'{name} Fail\n')
 
-# g = construct_graph(f'C:\\database\\PDBBind\\PDBBind_processed\\185l\\185l_protein_processed.pdb',
-#                      f'C:\\data\\LGDrugAI\\ligand_prep\\\\185l_ligand_prep.sdf')
-# converter = GraphFormatConvertor()
-# G = converter.convert_nx_to_pyg(g)
-# torch.save(G, f'C:\\database\\PDBBind\\PDBBind_processed\\185l\\185l_pyg.pt')
+
+if __name__ == '__main__':
+    from multiprocessing import Pool
+    from multiprocessing import freeze_support
+    freeze_support()
+    import os
+    from torch import isclose
+    from wcode.protein.convert import save_pdb_df_to_pdb
+    names = os.listdir('C:\\database\\PDBBind\\PDBBind_processed')
+    pool = Pool(8)
+    for name in names:
+        pool.apply_async(func=func, args=(name,))
+    pool.close()
+    pool.join()
+
+    # g = construct_graph(f'C:\\database\\PDBBind\\PDBBind_processed\\185l\\185l_protein_processed.pdb',
+    #                      f'C:\\data\\LGDrugAI\\ligand_prep\\\\185l_ligand_prep.sdf')
+    # converter = GraphFormatConvertor()
+    # G = converter.convert_nx_to_pyg(g)
+    # torch.save(G, f'C:\\database\\PDBBind\\PDBBind_processed\\185l\\185l_pyg.pt')

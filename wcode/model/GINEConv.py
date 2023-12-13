@@ -264,56 +264,48 @@ class Readout(nn.Module) :
 
 
 if __name__ == '__main__':
-    # model = GINEConv(20, 30)
-    # x = torch.randn((5, 20))
-    # edge_attr = torch.randn(4, 30)
-    # edge_index = torch.tensor([[0,0,0,0], [1,2,3,4]])
-    # data = torch_geometric.data.Data(x=x, edge_index=edge_index, edge_attr=edge_attr)
-    # print(model(x=x, edge_attr=edge_attr, edge_index=edge_index).shape)
-
-    # from torch_geometric.datasets import TUDataset
-    #
-    # dataset = TUDataset(root='C:\\data\\LGDrugAI\\data\\ENZYMES', name='ENZYMES')
-    # sample = dataset[0]
-    # print(sample)
-    # sample.edge_attr = torch.randn(168, 10)
-    # model = GraphEmbeddingModel(3,
-    #                             10,
-    #                             0,
-    #                             128,
-    #                             12)
-    # print(model.forward_batch(sample)[1].shape)
-    import torch
-    from glob import glob
     import os
-    files = glob('C:\\database\\PDBBind\\PDBBind_pyg_feature\\*.pt')
+    sample_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'sample_data')
+    protein_1 = os.path.join(sample_dir, '1a0q_protein_processed.pdb')
+    protein_2 = os.path.join(sample_dir, '1a0t_protein_processed.pdb')
+    ligand_1 = os.path.join(sample_dir, '1a0q_ligand.sdf')
+    ligand_2 = os.path.join(sample_dir, '1a0t_ligand.sdf')
+
+    # Generate Complex Graph
+    from wcode.protein.graph.graph_conversion import construct_graph, GraphFormatConvertor
+    from wcode.protein.graph.graph import save_pdb_df_to_pdb
+    g1, df1 = construct_graph(protein_1, ligand_1, pocket_only=True)
+    g2, df2 = construct_graph(protein_2, ligand_2, pocket_only=True)
+    save_pdb_df_to_pdb(df1, os.path.join(sample_dir, '1a0q_pocket.pdb'))
+    save_pdb_df_to_pdb(df2, os.path.join(sample_dir, '1a0t_pocket.pdb'))
+
+    # Convert To PyG Graph And Save To Disk
+    converter = GraphFormatConvertor()
+    G1 = converter.convert_nx_to_pyg(g1)
+    G2 = converter.convert_nx_to_pyg(g2)
+    torch.save(G1, os.path.join(sample_dir, '1a0q_pocket.pt'))
+    torch.save(G2, os.path.join(sample_dir, '1a0t_pocket.pt'))
+
+    # Load PyG Feature and Organize into the Model Input Format
     from torch_geometric.data import Batch
-    g = Batch.from_data_list([torch.load(files[0]), torch.load(files[1])])
-    atom_feature = torch.concat([g.residue_name_one_hot,
-                                 g.atom_type_one_hot,
-                                 g.record_symbol_one_hot,
-                                 g.rdkit_atom_feature_onehot], dim=-1).float()
-    edge_index = torch.Tensor(g.edge_index).long()
-    bond_feature = torch.Tensor(g.bond_feature).float()
+    G1 = torch.load(os.path.join(sample_dir, '1a0q_pocket.pt'))
+    G2 = torch.load(os.path.join(sample_dir, '1a0t_pocket.pt'))
+    G_batch = Batch.from_data_list([G1, G2])
+
+    G_batch_atom_feature = torch.concat([G_batch.residue_name_one_hot,
+                                                G_batch.atom_type_one_hot,
+                                                G_batch.record_symbol_one_hot,
+                                                G_batch.rdkit_atom_feature_onehot], dim=-1).float()
+    G_batch_edge_index = torch.Tensor(G_batch.edge_index).long()
+    G_batch_bond_feature = torch.Tensor(G_batch.bond_feature).float()
+
     model = GraphEmbeddingModel(142,
                                5,
                                0,
                                128,
                                100)
-    print(model.forward(atom_feature,
-                        edge_index,
-                        bond_feature,
-                        node2graph=g.batch)[1].sum(dim=-1))
-    for f in files[:2]:
-        g = torch.load(f)
-        atom_feature = torch.concat([g.residue_name_one_hot,
-                                     g.atom_type_one_hot,
-                                     g.record_symbol_one_hot,
-                                     g.rdkit_atom_feature_onehot], dim=-1).float()
-        edge_index = torch.Tensor(g.edge_index).long()
-        bond_feature = torch.Tensor(g.bond_feature).float()
-        print(model.forward(atom_feature,
-                            edge_index,
-                            bond_feature,
-                            node2graph=g.batch)[1].sum(dim=-1))
 
+    print(model.forward(G_batch_atom_feature,
+                        G_batch_edge_index,
+                        G_batch_bond_feature,
+                        node2graph=G_batch.batch)[1].shape)

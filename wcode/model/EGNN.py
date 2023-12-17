@@ -38,6 +38,12 @@ def batched_index_select(values, indices, dim=1):
 
 
 def fourier_encode_dist(x, num_encodings=4, include_self=True):
+    '''
+    Input:
+        x [...]
+    Output
+        x [..., 2 * num_encodings]
+    '''
     x = x.unsqueeze(-1)
     device, dtype, orig_x = x.device, x.dtype, x
     scales = 2 ** torch.arange(num_encodings, device=device, dtype=dtype)
@@ -242,37 +248,51 @@ class EGNN(nn.Module):
 
         use_nearest = num_nearest > 0 or only_sparse_neighbors
 
+        # rel_coors [b n 3]
         rel_coors = rearrange(coors, 'b i d -> b i () d') - rearrange(coors, 'b j d -> b () j d')
+
+        # rel_dist [b n n 1]
         rel_dist = (rel_coors ** 2).sum(dim=-1, keepdim=True)
 
         i = j = n
 
         if use_nearest:
+            # ranking [b n n]
             ranking = rel_dist[..., 0].clone()
 
             if exists(mask):
+                # mask [b n]
+                # rank_mask [b n n] 0:需要被mask 1:不需要被mask
                 rank_mask = mask[:, :, None] * mask[:, None, :]
+
+                # ranking [b n n] 1e5是需要被maask的地方，其他地方都是节点真实距离
                 ranking.masked_fill_(~rank_mask, 1e5)
 
             if exists(adj_mat):
                 if len(adj_mat.shape) == 2:
+                    # adj_mat [b n n] 邻接矩阵，1表示neighbor，0表示不是neighbor
                     adj_mat = repeat(adj_mat.clone(), 'i j -> b i j', b=b)
 
                 if only_sparse_neighbors:
+                    # num_nearest是所有节点中度最大的节点的度数
                     num_nearest = int(adj_mat.float().sum(dim=-1).max().item())
                     valid_radius = 0
 
                 self_mask = rearrange(torch.eye(n, device=device, dtype=torch.bool), 'i j -> () i j')
 
                 adj_mat = adj_mat.masked_fill(self_mask, False)
+                # ranking [b n n] 1e5是需要被maask的地方，-1是和自身的连接，0是临界矩阵所指示的连接，其他都是真实距离
                 ranking.masked_fill_(self_mask, -1.)
                 ranking.masked_fill_(adj_mat, 0.)
 
+            # nbhd_ranking, nbhd_indices 都是 [b n num_nearest]
             nbhd_ranking, nbhd_indices = ranking.topk(num_nearest, dim=-1, largest=False)
-
             nbhd_mask = nbhd_ranking <= valid_radius
 
+            # rel_coords [b n num_nearest 3]
             rel_coors = batched_index_select(rel_coors, nbhd_indices, dim=2)
+
+            # rel_dist [b n num_nearest 1]
             rel_dist = batched_index_select(rel_dist, nbhd_indices, dim=2)
 
             if exists(edges):
@@ -282,21 +302,29 @@ class EGNN(nn.Module):
 
         if fourier_features > 0:
             rel_dist = fourier_encode_dist(rel_dist, num_encodings=fourier_features)
+            # rel_dist [b n nei d]
             rel_dist = rearrange(rel_dist, 'b i j () d -> b i j d')
 
         if use_nearest:
+            # feats_j [b n nei node_feat]
             feats_j = batched_index_select(feats, nbhd_indices, dim=1)
         else:
+            # feats_j [b 1 nei(n) node_feat]
             feats_j = rearrange(feats, 'b j d -> b () j d')
 
+        # feats_i [b n 1 node_feat]
         feats_i = rearrange(feats, 'b i d -> b i () d')
+
+        # feats_i feats_j [b n nei(n) node_feat]
         feats_i, feats_j = broadcast_tensors(feats_i, feats_j)
 
+        # edge_input [b n nei(n) 2*node_feat+d]
         edge_input = torch.cat((feats_i, feats_j, rel_dist), dim=-1)
 
         if exists(edges):
             edge_input = torch.cat((edge_input, edges), dim=-1)
 
+        # m_ij [b n nei(n) e_hidden]
         m_ij = self.edge_mlp(edge_input)
 
         if exists(self.edge_gate):
@@ -306,6 +334,7 @@ class EGNN(nn.Module):
             mask_i = rearrange(mask, 'b i -> b i ()')
 
             if use_nearest:
+                # mask_j [b n nei(n)]
                 mask_j = batched_index_select(mask, nbhd_indices, dim=1)
                 mask = (mask_i * mask_j) & nbhd_mask
             else:
@@ -416,6 +445,7 @@ class EGNN_Network(nn.Module):
         if exists(self.token_emb):
             feats = self.token_emb(feats)
 
+        # 这里的pos_emb是指序列顺序的pos_emb，并不是三维坐标的pos_emb
         if exists(self.pos_emb):
             n = feats.shape[1]
             assert n <= self.num_positions, f'given sequence length {n} must be less than the number of positions {self.num_positions} set at init'
@@ -467,3 +497,57 @@ class EGNN_Network(nn.Module):
             return feats, coors, coor_changes
 
         return feats, coors
+
+
+if __name__ == '__main__':
+    import os
+    sample_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'sample_data')
+
+    from torch_geometric.data import Batch
+    G1 = torch.load(os.path.join(sample_dir, '1a0q_pocket.pt'))
+    G2 = torch.load(os.path.join(sample_dir, '1a0t_pocket.pt'))
+    G_batch = Batch.from_data_list([G1, G2])
+    G_batch_atom_feature = torch.concat([G_batch.residue_name_one_hot,
+                                                G_batch.atom_type_one_hot,
+                                                G_batch.record_symbol_one_hot,
+                                                G_batch.rdkit_atom_feature_onehot], dim=-1).float()
+    G_batch_edge_index = torch.Tensor(G_batch.edge_index).long()
+    G_batch_bond_feature = torch.Tensor(G_batch.bond_feature).float()
+
+
+
+    batch = [G1, G2]
+    node_feature_batch = []
+    coords_batch = []
+    mask_batch = []
+    for g in batch:
+        g_batch_atom_feature = torch.concat([g.residue_name_one_hot,
+                                             g.atom_type_one_hot,
+                                             g.record_symbol_one_hot,
+                                             g.rdkit_atom_feature_onehot], dim=-1).float()
+        g_batch_edge_index = torch.Tensor(g.edge_index).long()
+        g_batch_bond_feature = torch.Tensor(g.bond_feature).float()
+        g_mask = torch.ones(len(g_batch_atom_feature))
+        node_feature_batch.append(g_batch_atom_feature)
+        mask_batch.append(g_mask)
+        coords_batch.append(g.coords)
+
+    from torch.nn.utils.rnn import pad_sequence
+    node_feature_batch = pad_sequence(node_feature_batch, batch_first=True).float()
+    mask_batch = pad_sequence(mask_batch, batch_first=True).bool()
+    coords_batch = pad_sequence(coords_batch, batch_first=True).float()
+    print(node_feature_batch.shape, mask_batch.shape, coords_batch.shape)
+    net = EGNN_Network(
+        num_tokens=None,
+        num_positions=None,
+        dim=142,
+        depth=3,
+        num_nearest_neighbors=10,
+        coor_weights_clamp_value=2.,
+        fourier_features=10
+        # absolute clamped value for the coordinate weights, needed if you increase the num neareest neighbors
+    )
+    print(net(node_feature_batch, coords_batch, mask=mask_batch)[1].shape)
+
+
+

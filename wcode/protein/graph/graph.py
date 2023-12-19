@@ -151,10 +151,11 @@ if __name__ == '__main__':
     # for u, v, data in G.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
 
-    g = construct_graph('E:\\wgroup\\wcode\\sample_data\\1a0q_pocket_marked.pdb',
+    g, df = construct_graph('E:\\wgroup\\wcode\\sample_data\\1a0q_pocket_marked.pdb',
                         pocket_only=False)
     # for u, v, data in g.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
-    for n, data in g[0].nodes(data=True):
-        print(f"节点 {n} 的属性为: {data}")
+    # print(df['blank_1'][1][0])
+    print(len(df))
+    print(list(g.nodes(data=True))[0])
 

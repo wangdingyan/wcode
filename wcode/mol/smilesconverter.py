@@ -361,7 +361,6 @@ def neutralize_atoms(mol):
     return mol
 
 
-
 def standardize_mol(mol: Chem.Mol) -> Chem.Mol:
     mol = copy.deepcopy(mol)
 

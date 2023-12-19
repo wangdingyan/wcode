@@ -6,8 +6,6 @@ from io import StringIO
 
 ########################################################################################################################
 
-
-
 def seq2file(uniprot_id, filepath):
     baseUrl="http://www.uniprot.org/uniprot/"
     currentUrl=baseUrl+uniprot_id+".fasta"

@@ -60,9 +60,9 @@ class GraphFormatConvertor:
 
         for i, (_, feat_dict) in enumerate(G.nodes(data=True)):
             for key, value in feat_dict.items():
-                if key == 'rdkit_atom_feature':
-                    with open('C:\\tmp\\check_dimension.txt', 'a') as f:
-                        f.write(str(value)+'\n')
+                # if key == 'rdkit_atom_feature':
+                #     with open('C:\\tmp\\check_dimension.txt', 'a') as f:
+                #         f.write(str(value)+'\n')
                 key = str(key)
                 if key in self.columns:
                     if i == 0:

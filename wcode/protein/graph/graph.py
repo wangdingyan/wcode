@@ -1,13 +1,11 @@
 import copy
-import os
 import pandas as pd
-from pathlib import Path
-from wcode.protein.convert import read_pdb_to_dataframe, filter_dataframe, save_pdb_df_to_pdb
+from wcode.protein.convert import read_pdb_to_dataframe, filter_dataframe
 from wcode.protein.constant import BACKBONE_ATOMS, RESI_THREE_TO_1
 from wcode.protein.graph.graph_nodes import add_nodes_to_graph
+from wcode.protein.graph.graph_edge import add_distance_to_edges
 from wcode.protein.graph.graph_edge import add_distance_to_edges, EDGE_CONSTRUCTION_FUNCS
 from rdkit import Chem
-import rdkit
 
 import networkx as nx
 import numpy as np
@@ -153,11 +151,10 @@ if __name__ == '__main__':
     # for u, v, data in G.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
 
-    g = construct_graph('/mnt/c/database/PDBBind/PDBBind_processed/1a5h/1a5h_protein_processed.pdb',
-                    '/mnt/c/data/LGDrugAI/ligand_prep/1a5h_ligand_prep.sdf',
-                        pocket_only=True)
+    g = construct_graph('C:\\code\\wcode\\sample_data\\1a0q_pocket_marked.pdb',
+                        pocket_only=False)
     # for u, v, data in g.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
-    for n, data in g.nodes(data=True):
+    for n, data in g[0].nodes(data=True):
         print(f"节点 {n} 的属性为: {data}")
 

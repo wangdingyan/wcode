@@ -273,7 +273,7 @@ if __name__ == '__main__':
 
     # Generate Complex Graph
     from wcode.protein.graph.graph_conversion import construct_graph, GraphFormatConvertor
-    from wcode.protein.graph.graph import save_pdb_df_to_pdb
+    from wcode.protein.convert import save_pdb_df_to_pdb
     g1, df1 = construct_graph(protein_1, ligand_1, pocket_only=True)
     g2, df2 = construct_graph(protein_2, ligand_2, pocket_only=True)
     save_pdb_df_to_pdb(df1, os.path.join(sample_dir, '1a0q_pocket.pdb'))

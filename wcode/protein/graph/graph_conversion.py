@@ -20,6 +20,7 @@ class GraphFormatConvertor:
             "rdkit_atom_feature",
             "rdkit_atom_feature_onehot",
             "node_id",
+            "b_factor",
 
             # edge feature
             "edge_index",

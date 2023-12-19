@@ -103,7 +103,7 @@ def merge_protein_ligand_file(protein_file,
                               output_path=None):
     if output_path is None:
         output_path = protein_file.replace('.pdb', '_merge.pdb')
-    ligand_mol = next(Chem.SDMolSupplier(ligand_file))
+    ligand_mol = next(Chem.SDMolSupplier(ligand_file, sanitize=False))
     ligand_smiles = Chem.MolToSmiles(ligand_mol)
     protein_mol = Chem.MolFromPDBFile(protein_file, sanitize=False)
     merge_mol = Chem.CombineMols(protein_mol, ligand_mol)
@@ -151,7 +151,7 @@ if __name__ == '__main__':
     # for u, v, data in G.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
 
-    g = construct_graph('C:\\code\\wcode\\sample_data\\1a0q_pocket_marked.pdb',
+    g = construct_graph('E:\\wgroup\\wcode\\sample_data\\1a0q_pocket_marked.pdb',
                         pocket_only=False)
     # for u, v, data in g.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")

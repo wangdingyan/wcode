@@ -1,14 +1,13 @@
 import copy
+import numpy as np
 import pandas as pd
+import networkx as nx
 from wcode.protein.convert import read_pdb_to_dataframe, filter_dataframe
 from wcode.protein.constant import BACKBONE_ATOMS, RESI_THREE_TO_1
 from wcode.protein.graph.graph_nodes import add_nodes_to_graph
-from wcode.protein.graph.graph_edge import add_distance_to_edges
 from wcode.protein.graph.graph_edge import add_distance_to_edges, EDGE_CONSTRUCTION_FUNCS
+from wcode.protein.convert import save_pdb_df_to_pdb
 from rdkit import Chem
-
-import networkx as nx
-import numpy as np
 
 # https://github.com/a-r-j/graphein/blob/master/graphein/protein/graphs.py
 ########################################################################################################################
@@ -52,6 +51,64 @@ def construct_graph(protein_path,
         eval(f)(g)
     g = add_distance_to_edges(g)
     return g, df
+
+
+def nxg_to_df(g):
+    output_df = {'record_name': [],
+                 'atom_number': [],
+                 'blank_1':[],
+                 'atom_name': [],
+                 'alt_loc': [],
+                 'residue_name': [],
+                 'blank_2': [],
+                 'chain_id': [],
+                 'residue_number': [],
+                 'insertion': [],
+                 'blank_3': [],
+                 'x_coord': [],
+                 'y_coord': [],
+                 'z_coord': [],
+                 'occupancy': [],
+                 'b_factor': [],
+                 'blank_4': [],
+                 'segment_id': [],
+                 'element_symbol': [],
+                 'charge': [],
+                 'line_idx': [],
+                 'model_id': [],
+                 'node_id': [],
+                 'residue_id': []}
+
+    for i, (n, data) in enumerate(g.nodes(data=True)):
+        chain_id, residue_name, residue_number, atom_type = n.split(':')
+        output_df['record_name'].append(data['record_name'])
+        output_df['atom_number'].append(i+1)
+        output_df['blank_1'].append('')
+        output_df['atom_name'].append(atom_type)
+        output_df['alt_loc'].append('')
+        output_df['residue_name'].append(residue_name)
+        output_df['blank_2'].append('')
+        output_df['chain_id'].append(chain_id)
+        output_df['residue_number'].append(data['residue_number'])
+        output_df['insertion'].append('')
+        output_df['blank_3'].append('')
+        output_df['x_coord'].append(data['coords'][0])
+        output_df['y_coord'].append(data['coords'][1])
+        output_df['z_coord'].append(data['coords'][2])
+        output_df['occupancy'].append(1.00)
+        output_df['b_factor'].append(data['b_factor'])
+        output_df['blank_4'].append('')
+        output_df['segment_id'].append('0.0')
+        output_df['element_symbol'].append(data['element_symbol'])
+        output_df['charge'].append(np.nan)
+        output_df['line_idx'].append(i)
+        output_df['model_id'].append(1)
+        output_df['node_id'].append(n)
+        output_df['residue_id'].append(':'.join([chain_id, residue_name, residue_number]))
+
+    df = pd.DataFrame(output_df, index=None)
+    return df
+
 
 ########################################################################################################################
 
@@ -151,11 +208,24 @@ if __name__ == '__main__':
     # for u, v, data in G.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
 
-    g, df = construct_graph('E:\\wgroup\\wcode\\sample_data\\1a0q_pocket_marked.pdb',
-                        pocket_only=False)
+    g, df = construct_graph('C:\\code\\wcode\\sample_data\\1a0q_protein_processed_merge.pdb',
+                        pocket_only=False,
+                        keep_hets=['LIG'])
     # for u, v, data in g.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
     # print(df['blank_1'][1][0])
-    print(len(df))
-    print(list(g.nodes(data=True))[0])
+    # print(len(df))
+    # print(df.columns)
+    # print(df['node_id'])
+    # print(list(g.nodes(data=True))[65])
+    test_df = nxg_to_df(g)
+    save_pdb_df_to_pdb(test_df, 'C:\\tmp\\20231219.pdb')
+
+
+
+
+
+
+
+
 

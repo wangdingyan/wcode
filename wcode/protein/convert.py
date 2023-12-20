@@ -2,12 +2,52 @@ from biopandas.pdb import PandasPdb
 from typing import Any, List, Optional, Union
 import os
 from pathlib import Path
+from wcode.protein.graph.graph import construct_graph, nxg_to_df
 from wcode.protein.graph.graph_distance import *
+from wcode.protein.graph.graph_conversion import GraphFormatConvertor
 
 
 # https://github.com/a-r-j/graphein/blob/master/graphein/protein/graphs.py
 ########################################################################################################################
 
+class ProtConvertor():
+    @staticmethod
+    def nx2pyg(G):
+        nx2pyg_convertor = GraphFormatConvertor()
+        return nx2pyg_convertor.convert_nx_to_pyg(G)
+
+    @staticmethod
+    def pdb2df(path,
+               model_index=1,
+               **kwargs):
+        df = read_pdb_to_dataframe(path, model_index, **kwargs)
+        return df
+
+    @staticmethod
+    def df2pdb(df: pd.DataFrame,
+               path: str,
+               gz: bool = False,
+               atoms: bool = True,
+               hetatms: bool = True,):
+        save_pdb_df_to_pdb(df, path, gz, atoms, hetatms)
+
+    @staticmethod
+    def pdb2nx(protein_path,
+               ligand_path=None,
+               compute_edge_funcs=None,
+               keep_hets=[],
+               smiles=None,
+               pocket_only=False,
+               verbose=False):
+        return construct_graph(protein_path, ligand_path, compute_edge_funcs, keep_hets, smiles, pocket_only, verbose)
+
+    @staticmethod
+    def nx2pdb(g):
+        return nxg_to_df(g)
+
+
+
+########################################################################################################################
 
 def read_pdb_to_dataframe(
     path: Optional[Union[str, os.PathLike]] = None,
@@ -55,12 +95,6 @@ def save_pdb_df_to_pdb(
     if hetatms:
         ppd.df["HETATM"] = hetatm_df
     ppd.to_pdb(path=path, records=None, gz=gz, append_newline=True)
-
-
-
-
-
-########################################################################################################################
 
 
 def label_node_id(

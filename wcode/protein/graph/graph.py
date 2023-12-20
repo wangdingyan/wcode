@@ -6,7 +6,7 @@ from wcode.protein.convert import read_pdb_to_dataframe, filter_dataframe
 from wcode.protein.constant import BACKBONE_ATOMS, RESI_THREE_TO_1
 from wcode.protein.graph.graph_nodes import add_nodes_to_graph
 from wcode.protein.graph.graph_edge import add_distance_to_edges, EDGE_CONSTRUCTION_FUNCS
-from wcode.protein.convert import save_pdb_df_to_pdb
+from wcode.pl.merge import merge_protein_ligand_file
 from rdkit import Chem
 
 # https://github.com/a-r-j/graphein/blob/master/graphein/protein/graphs.py
@@ -155,36 +155,7 @@ def three_to_one_with_mods(res):
     return RESI_THREE_TO_1[res]
 
 
-def merge_protein_ligand_file(protein_file,
-                              ligand_file,
-                              output_path=None):
-    if output_path is None:
-        output_path = protein_file.replace('.pdb', '_merge.pdb')
-    ligand_mol = next(Chem.SDMolSupplier(ligand_file, sanitize=False))
-    ligand_smiles = Chem.MolToSmiles(ligand_mol)
-    protein_mol = Chem.MolFromPDBFile(protein_file, sanitize=False)
-    merge_mol = Chem.CombineMols(protein_mol, ligand_mol)
-    Chem.MolToPDBFile(merge_mol, output_path)
-    with open(output_path, 'r') as f:
-        lines = f.readlines()
-        for i, line in enumerate(lines):
-            if line.startswith('ATOM'):
-                res_num = int(line[22:26])
 
-        res_num += 1
-        res_num = list(str(res_num).rjust(4))
-        for i, line in enumerate(lines):
-            if line.startswith('HETATM'):
-                line = list(line)
-                line[21] = 'Z'
-                line[17], line[18], line[19] = 'L', 'I', 'G'
-                line[22], line[23], line[24], line[25] = res_num
-                line = "".join(line)
-                lines[i] = line
-    with open(output_path, 'w') as f:
-        for line in lines:
-            f.write(line)
-    return output_path, ligand_smiles
 
 
 if __name__ == '__main__':
@@ -219,6 +190,7 @@ if __name__ == '__main__':
     # print(df['node_id'])
     # print(list(g.nodes(data=True))[65])
     test_df = nxg_to_df(g)
+    from wcode.protein.convert import save_pdb_df_to_pdb
     save_pdb_df_to_pdb(test_df, 'C:\\tmp\\20231219.pdb')
 
 

@@ -1,11 +1,9 @@
-import os
-from wcode.protein.graph.graph import merge_protein_ligand_file
-from wcode.protein.convert import read_pdb_to_dataframe, save_pdb_df_to_pdb
-from wcode.protein.graph.graph_conversion import construct_graph, GraphFormatConvertor
+from wcode.pl.merge import merge_protein_ligand_file
+from wcode.protein.convert import read_pdb_to_dataframe
 from wcode.protein.graph.graph_distance import *
-import torch
 
 ########################################################################################################################
+
 def mark_pocket(protein_path,
                 ligand_path,
                 distance_threshold=8,
@@ -39,6 +37,8 @@ def generate_pyg_feature_file(n):
     # try:
     protein = os.path.join(base_dir, n, f'{n}_protein_processed.pdb')
     ligand = os.path.join(base_dir, n, f'{n}_ligand.sdf')
+    if os.path.exists(os.path.join(base_dir, n, f'{n}_pocket_marked.pdb')):
+        return
     mark_pocket(protein, ligand, marked_path=os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'))
     g, df = construct_graph(os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'), pocket_only=False)
     converter = GraphFormatConvertor()

@@ -1,7 +1,7 @@
 from tempfile import TemporaryDirectory
 import os
 from rdkit import Chem
-from wcode.protein.convert import filter_dataframe, save_pdb_df_to_pdb
+from wcode.protein.biodf import filter_dataframe, save_pdb_df_to_pdb
 from wcode.protein.constant import *
 from wcode.protein.graph.graph_distance import *
 from wcode.mol._atom import featurize_atom_one_hot, featurize_atom

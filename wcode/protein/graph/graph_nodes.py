@@ -5,7 +5,7 @@ import os
 from copy import deepcopy
 from tempfile import TemporaryDirectory
 from wcode.protein.constant import STANDARD_RESI_NAMES, PROTEIN_ATOMS, ATOM_SYMBOL
-from wcode.protein.convert import save_pdb_df_to_pdb
+from wcode.protein.biodf import save_pdb_df_to_pdb
 from wcode.mol._atom import featurize_atom, featurize_atom_one_hot
 from rdkit import Chem
 

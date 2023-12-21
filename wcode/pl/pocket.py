@@ -1,5 +1,8 @@
+import os
+from wcode.protein.graph.graph_conversion import construct_graph, GraphFormatConvertor
+import torch
 from wcode.pl.merge import merge_protein_ligand_file
-from wcode.protein.convert import read_pdb_to_dataframe
+from wcode.protein.biodf import read_pdb_to_dataframe, save_pdb_df_to_pdb
 from wcode.protein.graph.graph_distance import *
 
 ########################################################################################################################
@@ -33,12 +36,10 @@ def mark_pocket(protein_path,
 
 
 def generate_pyg_feature_file(n):
-    base_dir = 'D:\\PDBBind\\PDBBind_processed'
-    # try:
+    print(1, n)
+    base_dir = "C:\\database\\PDBBind\\PDBBind_processed"
     protein = os.path.join(base_dir, n, f'{n}_protein_processed.pdb')
-    ligand = os.path.join(base_dir, n, f'{n}_ligand.sdf')
-    if os.path.exists(os.path.join(base_dir, n, f'{n}_pocket_marked.pdb')):
-        return
+    ligand = f'C:\\data\\LGDrugAI\\ligand_prep\\{n}_ligand_prep.sdf'
     mark_pocket(protein, ligand, marked_path=os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'))
     g, df = construct_graph(os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'), pocket_only=False)
     converter = GraphFormatConvertor()
@@ -62,15 +63,16 @@ if __name__ == '__main__':
 
     import os
     from wcode.protein.graph.graph_conversion import construct_graph, GraphFormatConvertor
-    from wcode.protein.convert import save_pdb_df_to_pdb
     import torch
-    base_dir = 'D:\\PDBBind\\PDBBind_processed'
+    base_dir = 'C:\\database\\PDBBind\\PDBBind_processed'
     names    = os.listdir(base_dir)
+    print(len(names))
     from multiprocessing import Pool, freeze_support
     freeze_support()
-    pool = Pool(10)
+    pool = Pool(5)
     for n in names:
         pool.apply_async(func=generate_pyg_feature_file, args=(n,))
+        # generate_pyg_feature_file(n)
     pool.close()
     pool.join()
     # for n in names:

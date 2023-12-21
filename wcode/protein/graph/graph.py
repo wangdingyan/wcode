@@ -2,7 +2,7 @@ import copy
 import numpy as np
 import pandas as pd
 import networkx as nx
-from wcode.protein.convert import read_pdb_to_dataframe, filter_dataframe
+from wcode.protein.biodf import read_pdb_to_dataframe, filter_dataframe, save_pdb_df_to_pdb
 from wcode.protein.constant import BACKBONE_ATOMS, RESI_THREE_TO_1
 from wcode.protein.graph.graph_nodes import add_nodes_to_graph
 from wcode.protein.graph.graph_edge import add_distance_to_edges, EDGE_CONSTRUCTION_FUNCS
@@ -80,7 +80,7 @@ def nxg_to_df(g):
                  'residue_id': []}
 
     for i, (n, data) in enumerate(g.nodes(data=True)):
-        chain_id, residue_name, residue_number, atom_type = n.split(':')
+        chain_id, residue_name, residue_number, atom_type = data['node_id'].split(':')
         output_df['record_name'].append(data['record_name'])
         output_df['atom_number'].append(i+1)
         output_df['blank_1'].append('')
@@ -190,7 +190,6 @@ if __name__ == '__main__':
     # print(df['node_id'])
     # print(list(g.nodes(data=True))[65])
     test_df = nxg_to_df(g)
-    from wcode.protein.convert import save_pdb_df_to_pdb
     save_pdb_df_to_pdb(test_df, 'C:\\tmp\\20231219.pdb')
 
 

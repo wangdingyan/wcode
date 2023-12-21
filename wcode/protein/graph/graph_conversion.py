@@ -14,8 +14,11 @@ class GraphFormatConvertor:
             # node feature
             "coords",
             "node_id",
+            "residue_number",
+            "element_symbol",
             "residue_name_one_hot",
             "atom_type_one_hot",
+            "record_name",
             "record_symbol_one_hot",
             "rdkit_atom_feature",
             "rdkit_atom_feature_onehot",
@@ -202,7 +205,8 @@ if __name__ == '__main__':
     import os
     from glob import glob
     from torch import isclose
-    from wcode.protein.convert import save_pdb_df_to_pdb
+    from wcode.protein.biodf import save_pdb_df_to_pdb
+
     names = os.listdir('C:\\database\\PDBBind\\PDBBind_processed')
     complete_names = glob('C:\\database\\PDBBind\\PDBBind_pyg_feature\\*.pt')
     complete_names = [os.path.basename(n).split('_')[0] for n in complete_names]

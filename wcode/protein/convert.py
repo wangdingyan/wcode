@@ -64,3 +64,5 @@ if __name__ == '__main__':
     print(np.nan_to_num(dist_mat))
     df.to_excel('/mnt/d/tmp/5p21.xlsx')
     save_pdb_df_to_pdb(df, '/mnt/d/tmp/5p21_2.pdb')
+    converter = GraphFormatConvertor()
+    G = converter.convert_nx_to_pyg()

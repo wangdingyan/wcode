@@ -7,6 +7,7 @@ from torch.utils.data import DataLoader
 from sklearn import metrics
 from torch.optim import Adam
 from tqdm import tqdm
+from wcode.model.EGNN import fourier_encode_dist
 
 class pocket_dataset():
     def __init__(self, mode):
@@ -28,7 +29,7 @@ class scoring_model(Module):
     def __init__(self):
         super().__init__()
         self.embedding = GraphEmbeddingModel(142,
-                                             5,
+                                             25,
                                              0,
                                              128,
                                              0)
@@ -43,7 +44,11 @@ class scoring_model(Module):
                                      g.record_symbol_one_hot,
                                      g.rdkit_atom_feature_onehot], dim=-1).float().cuda()
         edge_index = torch.Tensor(g.edge_index).long().cuda()
+
         bond_feature = torch.Tensor(g.bond_feature).float().cuda()
+        distance_feature = fourier_encode_dist(g.distance, num_encodings=10, include_self=False).squeeze().float().cuda()
+        bond_feature = torch.cat([bond_feature, distance_feature], dim=-1)
+
         embedding = self.embedding(atom_feature,
                                    edge_index,
                                    bond_feature,
@@ -57,12 +62,12 @@ model = scoring_model()
 model = model.cuda()
 train_dataset = pocket_dataset(mode='train')
 valid_dataset = pocket_dataset(mode='valid')
-train_dataloader = DataLoader(train_dataset, batch_size=40, shuffle=True)
-valid_dataloader = DataLoader(valid_dataset, batch_size=40, shuffle=False)
+train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
+valid_dataloader = DataLoader(valid_dataset, batch_size=16, shuffle=False)
 optimizer = Adam(model.parameters(), lr=0.001)
 loss_fn = BCELoss()
 
-for e in range(100):
+for e in range(200):
     with torch.no_grad():
         torch.save(model.cpu().state_dict(), "C:\\tmp\\pocket_prediction_model.pt")
         model.cuda()

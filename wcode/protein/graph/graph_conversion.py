@@ -34,7 +34,7 @@ class GraphFormatConvertor:
 
             # edge index
             "edge_index_covalent",
-            "edge_index_distance_threshold",
+            "edge_index_noncovalent",
         ]
         self.columns = columns
         self.type2form = {

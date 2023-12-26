@@ -54,9 +54,9 @@ class EDGE_CONSTRUCTION_FUNCS():
             if not condition_2:
                 count += 1
                 if G.has_edge(n1, n2):
-                    G.edges[n1, n2]["kind"].add("distance_threshold")
+                    G.edges[n1, n2]["kind"].add("noncovalent")
                 else:
-                    G.add_edge(n1, n2, kind={"distance_threshold"})
+                    G.add_edge(n1, n2, kind={"noncovalent"})
 
     def add_covalent_edges(self, G: nx.Graph) -> nx.Graph:
         pdb_df = filter_dataframe(

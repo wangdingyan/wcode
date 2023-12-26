@@ -7,8 +7,10 @@ def merge_protein_ligand_file(protein_file,
     if output_path is None:
         output_path = protein_file.replace('.pdb', '_merge.pdb')
     ligand_mol = next(Chem.SDMolSupplier(ligand_file, sanitize=False))
+    ligand_mol = Chem.RemoveHs(ligand_mol)
     ligand_smiles = Chem.MolToSmiles(ligand_mol)
     protein_mol = Chem.MolFromPDBFile(protein_file, sanitize=False)
+    protein_mol = Chem.RemoveHs(protein_mol)
     merge_mol = Chem.CombineMols(protein_mol, ligand_mol)
     Chem.MolToPDBFile(merge_mol, output_path)
     with open(output_path, 'r') as f:

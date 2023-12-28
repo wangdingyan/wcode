@@ -1,11 +1,20 @@
 import torch
 import numpy as np
 from scipy.spatial.transform import Rotation
-from torch_geometric.data import InMemoryDataset, Data, DataLoader
+from torch_geometric.data import InMemoryDataset, Data as DATA, DataLoader
 
 tensor = torch.FloatTensor
 inttensor = torch.LongTensor
 
+class Data(DATA):
+    def __getattr__(self, key):
+        try:
+            return super().__getattr__(key)
+        except AttributeError as e:
+            if "object has no attribute" in str(e):
+                return None
+            else:
+                raise e
 
 class NormalizeChemFeatures(object):
     r"""Centers a protein"""
@@ -165,44 +174,45 @@ def load_protein_pair(pdb_id, data_dir,single_pdb=False):
     # pdist = pdist<2.0
     # y_p1 = (pdist.sum(1)>0).to(torch.float).reshape(-1,1)
     # y_p2 = (pdist.sum(0)>0).to(torch.float).reshape(-1,1)
-    y_p1 = p1["y"]
-    y_p2 = p2["y"]
+    y_p1 = p1.y
+    y_p2 = p2.y
 
     protein_pair_data = PairData(
-        xyz_p1=p1["xyz"],
-        xyz_p2=p2["xyz"],
-        face_p1=p1["face"],
-        face_p2=p2["face"],
-        chemical_features_p1=p1["chemical_features"],
-        chemical_features_p2=p2["chemical_features"],
+        xyz_p1=p1.xyz,
+        xyz_p2=p2.xyz,
+        face_p1=p1.face,
+        face_p2=p2.face,
+        chemical_features_p1=p1.chemical_features,
+        chemical_features_p2=p2.chemical_features,
         y_p1=y_p1,
         y_p2=y_p2,
-        normals_p1=p1["normals"],
-        normals_p2=p2["normals"],
-        center_location_p1=p1["center_location"],
-        center_location_p2=p2["center_location"],
-        atom_coords_p1=p1["atom_coords"],
-        atom_coords_p2=p2["atom_coords"],
-        atom_types_p1=p1["atom_types"],
-        atom_types_p2=p2["atom_types"],
+        normals_p1=p1.normals,
+        normals_p2=p2.normals,
+        center_location_p1=p1.center_location,
+        center_location_p2=p2.center_location,
+        atom_coords_p1=p1.atom_coords,
+        atom_coords_p2=p2.atom_coords,
+        atom_types_p1=p1.atom_types,
+        atom_types_p2=p2.atom_types,
     )
     return protein_pair_data
 
 
 def load_protein_npy(pdb_id, data_dir, center=False, single_pdb=False):
     """Loads a protein surface mesh and its features"""
-    atom_coords = tensor(np.load(data_dir / (pdb_id + "_atomxyz.npy")))
-    atom_types = tensor(np.load(data_dir / (pdb_id + "_atomtypes.npy")))
 
     # Load the data, and read the connectivity information:
     triangles = (
-        torch.zeros(atom_types.shape)
+        None
         if single_pdb
         else inttensor(np.load(data_dir / (pdb_id + "_triangles.npy"))).T
     )
     # Normalize the point cloud, as specified by the user:
-    points = torch.zeros(atom_types.shape) if single_pdb else tensor(np.load(data_dir / (pdb_id + "_xyz.npy")))
-    center_location = torch.zeros(atom_types.shape) if single_pdb else torch.mean(points, axis=0, keepdims=True)
+    points = None if single_pdb else tensor(np.load(data_dir / (pdb_id + "_xyz.npy")))
+    center_location = None if single_pdb else torch.mean(points, axis=0, keepdims=True)
+
+    atom_coords = tensor(np.load(data_dir / (pdb_id + "_atomxyz.npy")))
+    atom_types = tensor(np.load(data_dir / (pdb_id + "_atomtypes.npy")))
 
     if center:
         points = points - center_location
@@ -210,19 +220,19 @@ def load_protein_npy(pdb_id, data_dir, center=False, single_pdb=False):
 
     # Interface labels
     iface_labels = (
-        torch.zeros(atom_types.shape)
+        None
         if single_pdb
         else tensor(np.load(data_dir / (pdb_id + "_iface_labels.npy")).reshape((-1, 1)))
     )
 
     # Features
     chemical_features = (
-        torch.zeros(atom_types.shape) if single_pdb else tensor(np.load(data_dir / (pdb_id + "_features.npy")))
+        None if single_pdb else tensor(np.load(data_dir / (pdb_id + "_features.npy")))
     )
 
     # Normals
     normals = (
-        torch.zeros(atom_types.shape) if single_pdb else tensor(np.load(data_dir / (pdb_id + "_normals.npy")))
+        None if single_pdb else tensor(np.load(data_dir / (pdb_id + "_normals.npy")))
     )
 
     protein_data = Data(
@@ -236,4 +246,5 @@ def load_protein_npy(pdb_id, data_dir, center=False, single_pdb=False):
         atom_coords=atom_coords,
         atom_types=atom_types,
     )
+
     return protein_data

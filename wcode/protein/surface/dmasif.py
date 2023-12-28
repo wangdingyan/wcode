@@ -11,6 +11,9 @@ from Bio.PDB import *
 from Bio.SeqUtils import IUPACData
 from torch_geometric.transforms import Compose
 from wcode.protein.surface.data import NormalizeChemFeatures, CenterPairAtoms, RandomRotationPairAtoms, load_protein_pair
+from wcode.protein.surface.model import dMaSIF
+from wcode.protein.surface.data_iteration import iterate
+
 
 PROTEIN_LETTERS = [x.upper() for x in IUPACData.protein_letters_3to1.keys()]
 
@@ -101,7 +104,7 @@ def extractPDB(
     pdbio.save(outfilename, select=NotDisordered())
 
 def convert_to_npy(target_pdb, chains_dir, npy_dir, chains = ['A']):
-    pdb_id = target_pdb.split('\\')[-1]
+    pdb_id = target_pdb.split('/')[-1]
     pdb_id = pdb_id[:-4]
     protonated_file = target_pdb
     pdb_filename = protonated_file
@@ -198,11 +201,11 @@ def generate_descr(model_path, output_path, pdb_file, npy_directory, radius, res
 
 
 if __name__ == '__main__':
-    target_pdb = 'C:\\tmp\\dmasif\\1NPU.pdb'
+    target_pdb = '/mnt/c/tmp/dmasif/1NPU.pdb'
     target_name = "1NPU"
-    chains_dir = 'C:\\tmp\\dmasif\\chains'
+    chains_dir = '/mnt/c/tmp/dmasif/chains'
     chain_name = 'A'
-    model_path = '/content/MaSIF_colab/models/dMaSIF_site_3layer_16dims_12A_0.7res_150sup_epoch59'
+    model_path = '/mnt/c/tmp/dmasif/dMaSIF_site_3layer_16dims_9A_0.7res_150sup_epoch85'
     resolution = 0.7
     radius = 12
     supsampling = 100
@@ -216,7 +219,7 @@ if __name__ == '__main__':
         for f in files:
             os.remove(f)
 
-    npy_dir = 'C:\\tmp\\dmasif\\npys'
+    npy_dir = '/mnt/c/tmp/dmasif/npys'
     isExist = os.path.exists(npy_dir)
     if not isExist:
         os.makedirs(npy_dir)
@@ -225,7 +228,7 @@ if __name__ == '__main__':
         for f in files:
             os.remove(f)
 
-    pred_dir = 'C:\\tmp\\dmasif\\preds'
+    pred_dir = '/mnt/c/tmp/dmasif/preds'
     isExist = os.path.exists(pred_dir)
     if not isExist:
         os.makedirs(pred_dir)

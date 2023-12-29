@@ -179,9 +179,6 @@ def generate_descr(model_path, output_path, pdb_file, npy_directory, radius, res
     test_loader = DataLoader(
         test_dataset, batch_size=args.batch_size, follow_batch=batch_vars
     )
-    for d in test_loader:
-        print(d)
-
 
     net = dMaSIF(args)
     # net.load_state_dict(torch.load(model_path, map_location=args.device))
@@ -198,17 +195,18 @@ def generate_descr(model_path, output_path, pdb_file, npy_directory, radius, res
         save_path=save_predictions_path,
         pdb_ids=test_pdb_ids,
     )
+    return info
 
 
 if __name__ == '__main__':
-    target_pdb = '/mnt/c/tmp/dmasif/1NPU.pdb'
-    target_name = "1NPU"
+    target_pdb = '/mnt/c/tmp/dmasif/7WC5.pdb'
+    target_name = "7WC5"
     chains_dir = '/mnt/c/tmp/dmasif/chains'
     chain_name = 'A'
     model_path = '/mnt/c/tmp/dmasif/dMaSIF_site_3layer_16dims_9A_0.7res_150sup_epoch85'
     resolution = 0.7
     radius = 12
-    supsampling = 100
+    supsampling = 5
 
 
     isExist = os.path.exists(chains_dir)
@@ -245,3 +243,66 @@ if __name__ == '__main__':
     # Generate the embeddings
     pdb_name = "{n}_{c}_{c}".format(n=target_name, c=chain_name)
     info = generate_descr(model_path, pred_dir, pdb_name, npy_dir, radius, resolution, supsampling)
+
+    # @title Generate PDBs for hotspot atoms and residues
+    list_hotspot_residues = False  # @param {type:"boolean"}
+
+    from Bio.PDB.PDBParser import PDBParser
+    from scipy.spatial.distance import cdist
+
+    parser = PDBParser(PERMISSIVE=1)
+    structure = parser.get_structure("structure", target_pdb)
+
+    coord = np.load("/mnt/c/tmp/dmasif/preds/{n}_{c}_predcoords.npy".format(n=target_name, c=chain_name))
+    embedding = np.load("/mnt/c/tmp/dmasif/preds/{n}_{c}_predfeatures_emb1.npy".format(n=target_name, c=chain_name))
+    atom_coords = np.stack([atom.get_coord() for atom in structure.get_atoms()])
+
+    b_factor = embedding[:, -2]
+    # b_factor = (b_factor - min(b_factor)) / (max(b_factor) - min(b_factor))
+
+    dists = cdist(atom_coords, coord)
+    nn_ind = np.argmin(dists, axis=1)
+    dists = dists[np.arange(len(dists)), nn_ind]
+    atom_b_factor = b_factor[nn_ind]
+    dist_thresh = 2.0
+    atom_b_factor[dists > dist_thresh] = 0.0
+
+    for i, atom in enumerate(structure.get_atoms()):
+        atom.set_bfactor(atom_b_factor[i] * 100)
+
+    # Create folder for the embeddings
+    pred_dir = '/mnt/c/tmp/dmasif/output'
+    os.makedirs(pred_dir, exist_ok=True)
+
+    # Save pdb file with per-atom b-factors
+    io = PDBIO()
+    io.set_structure(structure)
+    io.save("/mnt/c/tmp/dmasif/output/per_atom_binding.pdb")
+
+    atom_residues = np.array([atom.get_parent().id[1] for atom in structure.get_atoms()])
+
+    hotspot_res = {}
+    for residue in structure.get_residues():
+        res_id = residue.id[1]
+        res_b_factor = np.max(atom_b_factor[atom_residues == res_id])
+        hotspot_res[res_id] = res_b_factor
+        for atom in residue.get_atoms():
+            atom.set_bfactor(res_b_factor * 100)
+
+    # Save pdb file with per-residue b-factors
+    io = PDBIO()
+    io.set_structure(structure)
+    io.save("/mnt/c/tmp/dmasif/output/per_resi_binding.pdb")
+
+    if list_hotspot_residues:
+        print('Sorted on residue contribution (high to low')
+        for w in sorted(hotspot_res, key=hotspot_res.get, reverse=True):
+            print(w, hotspot_res[w])
+
+    from wcode.protein.convert import ProtConvertor
+    from wcode.protein.biodf import construct_pseudoatom_df
+    import pandas as pd
+    df = ProtConvertor.pdb2df(target_pdb)
+    p_df = construct_pseudoatom_df(coord)
+    total_df = pd.concat([df, p_df])
+    ProtConvertor.df2pdb(p_df, '/mnt/c/tmp/1NSP_pe.pdb')

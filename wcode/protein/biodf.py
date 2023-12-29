@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from typing import Optional, Union, List, Any
-
+import numpy as np
 import pandas as pd
 from biopandas.pdb import PandasPdb
 from wcode.protein.graph.graph_distance import compute_distmat, get_interacting_atoms
@@ -289,3 +289,59 @@ def select_chains(
         )
 
     return protein_df
+
+def construct_pseudoatom_df(xyz_list, b_factor_list=None):
+    if b_factor_list is None:
+        b_factor_list = [1.00] * len(xyz_list)
+    output_df = {'record_name': [],
+                 'atom_number': [],
+                 'blank_1': [],
+                 'atom_name': [],
+                 'alt_loc': [],
+                 'residue_name': [],
+                 'blank_2': [],
+                 'chain_id': [],
+                 'residue_number': [],
+                 'insertion': [],
+                 'blank_3': [],
+                 'x_coord': [],
+                 'y_coord': [],
+                 'z_coord': [],
+                 'occupancy': [],
+                 'b_factor': [],
+                 'blank_4': [],
+                 'segment_id': [],
+                 'element_symbol': [],
+                 'charge': [],
+                 'line_idx': [],
+                 'model_id': [],
+                 'node_id': [],
+                 'residue_id': []}
+
+    for i, (xyz, b_factor) in enumerate(zip(xyz_list, b_factor_list)):
+        output_df['record_name'].append('HETATM')
+        output_df['atom_number'].append(i + 1)
+        output_df['blank_1'].append('')
+        output_df['atom_name'].append('PSE')
+        output_df['alt_loc'].append('')
+        output_df['residue_name'].append('PSE')
+        output_df['blank_2'].append('')
+        output_df['chain_id'].append('P')
+        output_df['residue_number'].append(9999)
+        output_df['insertion'].append('')
+        output_df['blank_3'].append('')
+        output_df['x_coord'].append(xyz[0])
+        output_df['y_coord'].append(xyz[1])
+        output_df['z_coord'].append(xyz[2])
+        output_df['occupancy'].append(1.00)
+        output_df['b_factor'].append(b_factor)
+        output_df['blank_4'].append('')
+        output_df['segment_id'].append('0.0')
+        output_df['element_symbol'].append('X')
+        output_df['charge'].append(np.nan)
+        output_df['line_idx'].append(i)
+        output_df['model_id'].append(1)
+        output_df['node_id'].append('')
+        output_df['residue_id'].append('')
+    df = pd.DataFrame(output_df, index=None)
+    return df

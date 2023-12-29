@@ -366,7 +366,7 @@ def iterate(
                     summary_writer.add_histogram(f"Input features/{d}", features)
 
             if save_path is not None:
-                save_protein_batch_single(
+                embedding = save_protein_batch_single(
                     batch_ids[protein_it], P1, save_path, pdb_idx=1
                 )
                 if not args.single_protein:

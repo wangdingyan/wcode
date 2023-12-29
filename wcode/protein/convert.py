@@ -52,17 +52,31 @@ class ProtConvertor():
                                                                 'residue_number',
                                                                 'element_symbol'])
 
+
+
+
 ########################################################################################################################
 
 
 if __name__ == '__main__':
-    df = read_pdb_to_dataframe('/mnt/d/tmp/5p21.pdb',
-                               keep_hets=['GNP'],
-                               pocket_only=True)
-    dist_mat = compute_distmat(df)
-    dist_mat = dist_mat[dist_mat > 10]
-    print(np.nan_to_num(dist_mat))
-    df.to_excel('/mnt/d/tmp/5p21.xlsx')
-    save_pdb_df_to_pdb(df, '/mnt/d/tmp/5p21_2.pdb')
-    converter = GraphFormatConvertor()
-    G = converter.convert_nx_to_pyg()
+    # df = read_pdb_to_dataframe('/mnt/d/tmp/5p21.pdb',
+    #                            keep_hets=['GNP'],
+    #                            pocket_only=True)
+    # dist_mat = compute_distmat(df)
+    # dist_mat = dist_mat[dist_mat > 10]
+    # print(np.nan_to_num(dist_mat))
+    # df.to_excel('/mnt/d/tmp/5p21.xlsx')
+    # save_pdb_df_to_pdb(df, '/mnt/d/tmp/5p21_2.pdb')
+    # converter = GraphFormatConvertor()
+    # G = converter.convert_nx_to_pyg()
+
+
+    from wcode.protein.biodf import construct_pseudoatom_df
+    import numpy as np
+    df = construct_pseudoatom_df(np.random.randn(10,3))
+    converter = ProtConvertor()
+    G = converter.df2pdb(df, '/mnt/c/tmp/pseudoatom.pdb')
+    nx = converter.pdb2nx('/mnt/c/tmp/pseudoatom.pdb')
+    pyg = converter.nx2pyg(nx)
+    print(pyg)
+

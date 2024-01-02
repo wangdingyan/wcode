@@ -199,14 +199,14 @@ def generate_descr(model_path, output_path, pdb_file, npy_directory, radius, res
 
 
 if __name__ == '__main__':
-    target_pdb = '/mnt/c/tmp/dmasif/7WC5.pdb'
-    target_name = "7WC5"
+    target_pdb = '/mnt/c/tmp/dmasif/7EU7.pdb'
+    target_name = "7EU7"
     chains_dir = '/mnt/c/tmp/dmasif/chains'
-    chain_name = 'A'
+    chain_name = 'D'
     model_path = '/mnt/c/tmp/dmasif/dMaSIF_site_3layer_16dims_9A_0.7res_150sup_epoch85'
     resolution = 0.7
     radius = 12
-    supsampling = 5
+    supsampling = 50
 
 
     isExist = os.path.exists(chains_dir)
@@ -235,7 +235,7 @@ if __name__ == '__main__':
         for f in files:
             os.remove(f)
 
-    chains = ['A']
+    chains = ['D']
 
     # Generate the surface features
     convert_to_npy(target_pdb, chains_dir, npy_dir, chains)
@@ -305,4 +305,4 @@ if __name__ == '__main__':
     df = ProtConvertor.pdb2df(target_pdb)
     p_df = construct_pseudoatom_df(coord)
     total_df = pd.concat([df, p_df])
-    ProtConvertor.df2pdb(p_df, '/mnt/c/tmp/1NSP_pe.pdb')
+    ProtConvertor.df2pdb(p_df, '/mnt/c/tmp/1NSP_peC.pdb')

@@ -11,7 +11,8 @@ from wcode.model.EGNN import fourier_encode_dist
 ########################################################################################################################
 
 class GraphFormatConvertor:
-    def __init__(self):
+    def __init__(self, padding_num=0):
+        self.padding_num = padding_num
         columns = [
             # node feature
             "coords",
@@ -27,6 +28,14 @@ class GraphFormatConvertor:
             "node_id",
             "b_factor",
 
+            # dssp
+            "rsa",
+            "asa",
+            "phi",
+            "psi",
+            "ss",
+            "ss_onehot",
+
             # edge feature
             "edge_index",
             "distance",
@@ -35,6 +44,8 @@ class GraphFormatConvertor:
             # edge index
             "edge_index_covalent",
             "edge_index_noncovalent",
+
+
         ]
         self.columns = columns
         self.type2form = {
@@ -62,18 +73,36 @@ class GraphFormatConvertor:
         )
 
         # Add node features
-        node_feature_names = G.nodes(data=True)[0].keys()
+        node_feature_names = set(key for _, data in G.nodes(data=True) for key in data.keys())
+        node_feature_length = {}
+        for _, feat_dict in G.nodes(data=True):
+            for key, value in feat_dict.items():
+                if key not in node_feature_length:
+                    if type(value) in [str, int, float, np.float64]:
+                        node_feature_length[key] = 1
+                    else:
+                        node_feature_length[key] = len(value)
 
         for i, (_, feat_dict) in enumerate(G.nodes(data=True)):
-            for key, value in feat_dict.items():
-                # if key == 'rdkit_atom_feature':
-                #     with open('C:\\tmp\\check_dimension.txt', 'a') as f:
-                #         f.write(str(value)+'\n')
-                key = str(key)
+            # for key, value in feat_dict.items():
+            #     key = str(key)
+            #     if key in self.columns:
+            #         if i == 0:
+            #             data[key] = []
+            #
+            #         data[key].append(value)
+            for key in node_feature_names:
                 if key in self.columns:
                     if i == 0:
                         data[key] = []
-                    data[key].append(value)
+                    if key in feat_dict:
+                        if node_feature_length[key] == 1:
+                            data[key].append([feat_dict[key]])
+                        else:
+                            data[key].append(feat_dict[key])
+                    else:
+                        data[key].append([self.padding_num] * node_feature_length[key])
+
 
         # Add edge features
         edge_list = list(G.edges(data=True))
@@ -302,32 +331,38 @@ if __name__ == '__main__':
     # pool.close()
     # pool.join()
 
-    g = construct_graph(f'C:\\database\\PDBBind\\PDBBind_processed\\185l\\185l_protein_processed.pdb',
-                         f'C:\\data\\LGDrugAI\\ligand_prep\\\\185l_ligand_prep.sdf')
+    g, df = construct_graph(f'/mnt/c/database/PDBBind/PDBBind_processed/185l/185l_protein_processed.pdb',
+                         f'/mnt/c/data/LGDrugAI/ligand_prep/185l_ligand_prep.sdf',
+                            granularity='CA',
+                            dssp=True)
     converter = GraphFormatConvertor()
-    G = converter.convert_to_hetero_graph(g[0])
+    G = converter.convert_nx_to_pyg(g)
+    print(G['node_id'][20:30])
+    print(G['b_factor'][20:30])
+    print(g.graph['raw_pdb_df'])
+
 
     # torch.save(G, f'C:\\database\\PDBBind\\PDBBind_processed\\185l\\185l_pyg.pt')
 
-    from torch_geometric.nn import GATConv, Linear, to_hetero
-
-
-    class GAT(torch.nn.Module):
-        def __init__(self, hidden_channels, out_channels):
-            super().__init__()
-            self.conv1 = GATConv((-1, -1), hidden_channels, add_self_loops=False)
-            self.lin1 = Linear(-1, hidden_channels)
-            self.conv2 = GATConv((-1, -1), out_channels, add_self_loops=False)
-            self.lin2 = Linear(-1, out_channels)
-
-        def forward(self, x, edge_index):
-            x = self.conv1(x, edge_index) + self.lin1(x)
-            x = x.relu()
-            x = self.conv2(x, edge_index) + self.lin2(x)
-            return x
-
-
-    model = GAT(hidden_channels=64, out_channels=5)
-    model = to_hetero(model, G.metadata(), aggr='sum')
-    out = model(G.x_dict, G.edge_index_dict)
-    print(out)
+    # from torch_geometric.nn import GATConv, Linear, to_hetero
+    #
+    #
+    # class GAT(torch.nn.Module):
+    #     def __init__(self, hidden_channels, out_channels):
+    #         super().__init__()
+    #         self.conv1 = GATConv((-1, -1), hidden_channels, add_self_loops=False)
+    #         self.lin1 = Linear(-1, hidden_channels)
+    #         self.conv2 = GATConv((-1, -1), out_channels, add_self_loops=False)
+    #         self.lin2 = Linear(-1, out_channels)
+    #
+    #     def forward(self, x, edge_index):
+    #         x = self.conv1(x, edge_index) + self.lin1(x)
+    #         x = x.relu()
+    #         x = self.conv2(x, edge_index) + self.lin2(x)
+    #         return x
+    #
+    #
+    # model = GAT(hidden_channels=64, out_channels=5)
+    # model = to_hetero(model, G.metadata(), aggr='sum')
+    # out = model(G.x_dict, G.edge_index_dict)
+    # print(out)

@@ -80,7 +80,9 @@ def process_dataframe(
     pocket_only = False,
 ) -> pd.DataFrame:
 
-    protein_df = label_node_id(protein_df)
+    protein_df = label_node_id(protein_df,
+                               granularity=granularity,
+                               keep_hets=keep_hets)
 
     atoms = filter_dataframe(
         protein_df,
@@ -104,10 +106,21 @@ def process_dataframe(
         atoms = deprotonate_structure(atoms)
 
     # Restrict DF to desired granularity
-    if granularity == "centroids":
+    if granularity == "atom":
+        pass
+    elif granularity == "centroids":
         atoms = convert_structure_to_centroids(atoms)
     else:
-        pass
+        ligand_atoms = filter_dataframe(atoms,
+                                        by_column='record_name',
+                                        list_of_values=['HETATM'],
+                                        boolean=True)
+        protein_atoms = filter_dataframe(atoms,
+                                        by_column='record_name',
+                                        list_of_values=['ATOM'],
+                                        boolean=True)
+        atoms = subset_structure_to_atom_type(protein_atoms, granularity)
+        atoms = pd.concat([atoms, ligand_atoms])
 
     protein_df = atoms
 
@@ -154,7 +167,9 @@ def process_dataframe(
 
 
 def label_node_id(
-    df: pd.DataFrame) -> pd.DataFrame:
+    df: pd.DataFrame,
+    granularity: str,
+    keep_hets) -> pd.DataFrame:
 
     df["node_id"] = (
         df["chain_id"].apply(str)
@@ -168,7 +183,25 @@ def label_node_id(
     df["node_id"] = df["node_id"] + ":" + df["alt_loc"].apply(str)
     df["node_id"] = df["node_id"].str.replace(":$", "", regex=True)
     df["residue_id"] = df["node_id"]
-    df["node_id"] = df["node_id"] + ":" + df["atom_name"]
+
+    def update_node_id(row):
+        node_id = row["node_id"]
+        atom_name = row["atom_name"]
+
+        # 检查原始的 node_id 是否包含 het_atm 中的任何元素
+        contains_het_atm = any(atom in node_id for atom in keep_hets)
+
+        if contains_het_atm:
+            # 如果包含，保留原始的 node_id
+            return f"{node_id}:{atom_name}"
+        else:
+            # 如果不包含，进行拼接更新
+            return node_id
+
+    if granularity == "atom":
+        df["node_id"] = df["node_id"] + ":" + df["atom_name"]
+    else:
+        df["node_id"] = df.apply(update_node_id, axis=1)
 
     return df
 
@@ -345,3 +378,18 @@ def construct_pseudoatom_df(xyz_list, b_factor_list=None):
         output_df['residue_id'].append('')
     df = pd.DataFrame(output_df, index=None)
     return df
+
+def subset_structure_to_atom_type(
+    df: pd.DataFrame, granularity: str
+) -> pd.DataFrame:
+    """
+    Return a subset of atomic dataframe that contains only certain atom names.
+
+    :param df: Protein Structure dataframe to subset.
+    :type df: pd.DataFrame
+    :returns: Subset protein structure dataframe.
+    :rtype: pd.DataFrame
+    """
+    return filter_dataframe(
+        df, by_column="atom_name", list_of_values=[granularity], boolean=True
+    )

@@ -2,6 +2,7 @@ import copy
 import numpy as np
 import pandas as pd
 import networkx as nx
+from biopandas.pdb import PandasPdb
 from wcode.protein.biodf import read_pdb_to_dataframe, filter_dataframe, save_pdb_df_to_pdb
 from wcode.protein.constant import BACKBONE_ATOMS, RESI_THREE_TO_1
 from wcode.protein.graph.graph_nodes import add_nodes_to_graph
@@ -18,6 +19,8 @@ def construct_graph(protein_path,
                     compute_edge_funcs=None,
                     keep_hets=[],
                     smiles=None,
+                    granularity='atom',
+                    dssp=False,
                     pocket_only=False,
                     verbose=False):
 
@@ -38,18 +41,26 @@ def construct_graph(protein_path,
     if ligand_path is None:
         output_path = protein_path
 
+    raw_df = PandasPdb().read_pdb(output_path).get_model(1)
+    raw_df = pd.concat([raw_df.df["ATOM"], raw_df.df["HETATM"]])
+
     df = read_pdb_to_dataframe(output_path,
                                keep_hets=keep_hets,
-                               pocket_only=pocket_only)
+                               pocket_only=pocket_only,
+                               granularity=granularity)
 
     g = initialise_graph_with_metadata(protein_df=df,
+                                       raw_pdb_df=raw_df,
                                        keep_hets=keep_hets)
 
-    g = add_nodes_to_graph(g, verbose=verbose)
+    g = add_nodes_to_graph(g,
+                           verbose=verbose,
+                           dssp=dssp)
 
     for f in compute_edge_funcs:
         eval(f)(g)
     g = add_distance_to_edges(g)
+
     return g, df
 
 
@@ -114,6 +125,7 @@ def nxg_to_df(g):
 
 def initialise_graph_with_metadata(
     protein_df: pd.DataFrame,
+    raw_pdb_df: pd.DataFrame,
     keep_hets,
     granularity='atom',
 ) -> nx.Graph:
@@ -121,10 +133,14 @@ def initialise_graph_with_metadata(
     G = nx.Graph(
         chain_ids=list(protein_df["chain_id"].unique()),
         pdb_df=protein_df,
+        raw_pdb_df=raw_pdb_df,
         rgroup_df=compute_rgroup_dataframe(protein_df),
         coords=np.asarray(protein_df[["x_coord", "y_coord", "z_coord"]]),
         keep_hets=keep_hets
     )
+
+    # Create graph and assign intrinsic graph-level metadata
+    G.graph["node_type"] = granularity
 
     # Add Sequences to graph metadata
     for c in G.graph["chain_ids"]:
@@ -179,9 +195,13 @@ if __name__ == '__main__':
     # for u, v, data in G.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
 
-    g, df = construct_graph('C:\\code\\wcode\\sample_data\\1a0q_protein_processed_merge.pdb',
+    g, df = construct_graph('/mnt/c/code/wcode/sample_data/1a0q_protein_processed_merge.pdb',
                         pocket_only=False,
+                        dssp=True,
+                        granularity='CA',
                         keep_hets=['LIG'])
+    for n, data in g.nodes(data=True):
+        print(f"节点 {n} 的属性为: {data}")
     # for u, v, data in g.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
     # print(df['blank_1'][1][0])
@@ -189,8 +209,8 @@ if __name__ == '__main__':
     # print(df.columns)
     # print(df['node_id'])
     # print(list(g.nodes(data=True))[65])
-    test_df = nxg_to_df(g)
-    save_pdb_df_to_pdb(test_df, 'C:\\tmp\\20231219.pdb')
+    # test_df = nxg_to_df(g)
+    # save_pdb_df_to_pdb(test_df, 'C:\\tmp\\20231219.pdb')
 
 
 

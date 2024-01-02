@@ -3144,3 +3144,27 @@ ATOM_SYMBOL = [
             'Br',
             'I',
             'other']
+
+DSSP_COLS = [
+    "chain",
+    "resnum",
+    "icode",
+    "aa",
+    "ss",
+    "asa",
+    "phi",
+    "psi",
+    "dssp_index",
+    "NH_O_1_relidx",
+    "NH_O_1_energy",
+    "O_NH_1_relidx",
+    "O_NH_1_energy",
+    "NH_O_2_relidx",
+    "NH_O_2_energy",
+    "O_NH_2_relidx",
+    "O_NH_2_energy",
+]
+"""Columns in DSSP Output."""
+
+DSSP_SS = ["H", "B", "E", "G", "I", "T", "S"]
+"""Secondary structure types detected by ``DSSP``"""

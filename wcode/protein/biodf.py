@@ -284,8 +284,8 @@ def convert_structure_to_centroids(df: pd.DataFrame) -> pd.DataFrame:
 
 def sort_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     return df.sort_values(
-        # by=["residue_number", "chain_id", "atom_number", "insertion"]
-        by = ["atom_number"]
+        by=["chain_id", "residue_number", "atom_number", "insertion"]
+        # by = ["atom_number"]
     )
 
 

@@ -335,11 +335,14 @@ if __name__ == '__main__':
                          f'/mnt/c/data/LGDrugAI/ligand_prep/185l_ligand_prep.sdf',
                             granularity='CA',
                             dssp=True)
+    print(g.graph['sequence_A'])
     converter = GraphFormatConvertor()
     G = converter.convert_nx_to_pyg(g)
     print(G['node_id'][20:30])
-    print(G['b_factor'][20:30])
-    print(g.graph['raw_pdb_df'])
+    print(G['ss'][20:30])
+    print(G['ss_onehot'][20:30])
+    print(G['rsa'][20:30])
+
 
 
     # torch.save(G, f'C:\\database\\PDBBind\\PDBBind_processed\\185l\\185l_pyg.pt')

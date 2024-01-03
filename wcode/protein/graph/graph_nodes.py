@@ -10,6 +10,7 @@ from wcode.protein.constant import STANDARD_RESI_NAMES, PROTEIN_ATOMS, ATOM_SYMB
 from wcode.protein.biodf import save_pdb_df_to_pdb
 from wcode.mol._atom import featurize_atom, featurize_atom_one_hot
 from wcode.utils.dependency import is_tool
+from wcode.protein.seq.embedding import esm_residue_embedding
 from Bio.PDB.DSSP import dssp_dict_from_pdb_file, residue_max_acc
 from rdkit import Chem
 
@@ -19,6 +20,7 @@ from rdkit import Chem
 def add_nodes_to_graph(
     G: nx.Graph,
     dssp=False,
+    esm=False,
     protein_df = None,
     verbose: bool = False,
 ) -> nx.Graph:
@@ -38,6 +40,7 @@ def add_nodes_to_graph(
 
     # Assign intrinsic node attributes
     chain_id = protein_df["chain_id"].apply(str)
+    residue_id = protein_df["residue_id"].apply(str)
 
     # residue type
     residue_name = protein_df["residue_name"]
@@ -78,6 +81,7 @@ def add_nodes_to_graph(
 
     nx.set_node_attributes(G, dict(zip(nodes, residue_name)), "residue_name")
     nx.set_node_attributes(G, dict(zip(nodes, residue_name_one_hot)), "residue_name_one_hot")
+    nx.set_node_attributes(G, dict(zip(nodes, residue_id)), "residue_id")
 
     nx.set_node_attributes(
         G, dict(zip(nodes, residue_number)), "residue_number"
@@ -103,6 +107,9 @@ def add_nodes_to_graph(
         G = phi(G)
         G = psi(G)
         G = secondary_structure(G)
+
+    if esm:
+        G = esm_residue_embedding(G)
 
     if verbose:
         print(G)
@@ -228,15 +235,23 @@ def add_dssp_feature(G: nx.Graph,
     :rtype: nx.Graph
     """
     if "dssp_df" not in G.graph:
-        G = add_dssp_df(G, G.graph["config"].dssp_config)
+        G = add_dssp_df(G)
     dssp_df = G.graph["dssp_df"]
-    nx.set_node_attributes(G, dict(dssp_df[feature]), feature)
+
+    assign_feat(G, dict(dssp_df[feature]), feature)
     if feature == 'ss':
         ss_symbol = dssp_df["ss"]
         ss_encoding = one_of_k_encoding_unk(DSSP_SS, True)
         ss_encoding_one_hot = ss_symbol.apply(ss_encoding)
-        nx.set_node_attributes(G, dict(ss_encoding_one_hot), 'ss_onehot')
+        assign_feat(G, dict(ss_encoding_one_hot), 'ss_onehot')
     return G
+
+def assign_feat(G, feature_dict, feature_name):
+    for n, d in G.nodes(data=True):
+        residue_id = G.nodes[n]['residue_id']
+        if residue_id in feature_dict:
+            G.nodes[n][feature_name] = feature_dict[residue_id]
+
 
 
 def rsa(G: nx.Graph) -> nx.Graph:

@@ -21,6 +21,7 @@ def construct_graph(protein_path,
                     smiles=None,
                     granularity='atom',
                     dssp=False,
+                    esm=False,
                     pocket_only=False,
                     verbose=False):
 
@@ -55,7 +56,8 @@ def construct_graph(protein_path,
 
     g = add_nodes_to_graph(g,
                            verbose=verbose,
-                           dssp=dssp)
+                           dssp=dssp,
+                           esm=esm)
 
     for f in compute_edge_funcs:
         eval(f)(g)
@@ -198,8 +200,9 @@ if __name__ == '__main__':
     g, df = construct_graph('/mnt/c/code/wcode/sample_data/1a0q_protein_processed_merge.pdb',
                         pocket_only=False,
                         dssp=True,
+                        esm=True,
                         granularity='CA',
-                        keep_hets=['LIG'])
+                        keep_hets=[])
     for n, data in g.nodes(data=True):
         print(f"节点 {n} 的属性为: {data}")
     # for u, v, data in g.edges(data=True):

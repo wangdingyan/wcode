@@ -4,6 +4,8 @@ from typing import Optional, Union, List, Any
 import numpy as np
 import pandas as pd
 from biopandas.pdb import PandasPdb
+
+from wcode.protein.constant import BACKBONE_ATOMS
 from wcode.protein.graph.graph_distance import compute_distmat, get_interacting_atoms
 
 
@@ -393,3 +395,7 @@ def subset_structure_to_atom_type(
     return filter_dataframe(
         df, by_column="atom_name", list_of_values=[granularity], boolean=True
     )
+
+
+def compute_rgroup_dataframe(pdb_df: pd.DataFrame) -> pd.DataFrame:
+    return filter_dataframe(pdb_df, "atom_name", BACKBONE_ATOMS, False)

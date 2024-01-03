@@ -14,7 +14,9 @@ def mark_pocket(protein_path,
 
     keep_hets = ['LIG']
     output_path, ligand_smiles = merge_protein_ligand_file(protein_path, ligand_path)
-    protein_df = read_pdb_to_dataframe(output_path, keep_hets=keep_hets)
+    protein_df = read_pdb_to_dataframe(output_path,
+                                       keep_hets=keep_hets,
+                                       granularity='atom')
 
     retain_residue_ids = []
     dist_mat = compute_distmat(protein_df)
@@ -37,15 +39,19 @@ def mark_pocket(protein_path,
 
 def generate_pyg_feature_file(n):
     print(1, n)
-    base_dir = "C:\\database\\PDBBind\\PDBBind_processed"
+    base_dir = "/mnt/c/database/PDBBind/PDBBind_processed"
     protein = os.path.join(base_dir, n, f'{n}_protein_processed.pdb')
-    ligand = f'C:\\data\\LGDrugAI\\ligand_prep\\{n}_ligand_prep.sdf'
+    ligand = f'/mnt/c/data/LGDrugAI/ligand_prep/{n}_ligand_prep.sdf'
     mark_pocket(protein, ligand, marked_path=os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'))
-    g, df = construct_graph(os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'), pocket_only=False)
+    g, df = construct_graph(os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'),
+                            granularity='CA',
+                            dssp=True,
+                            esm=True,
+                            pocket_only=False)
     converter = GraphFormatConvertor()
     pyg = converter.convert_nx_to_pyg(g)
-    torch.save(pyg, os.path.join(base_dir, n, f'{n}_pocket_marked.pt'))
-    with open("C:\\tmp\\record.txt", 'a+') as f:
+    torch.save(pyg, os.path.join(base_dir, n, f'{n}_pocket_marked_CA_esm_dssp.pt'))
+    with open("/mnt/c/tmp/record.txt", 'a+') as f:
         f.write(f"{n} Success\n")
     # except:
     #     with open("C:\\tmp\\record.txt", 'a+') as f:
@@ -64,17 +70,17 @@ if __name__ == '__main__':
     import os
     from wcode.protein.graph.graph_conversion import construct_graph, GraphFormatConvertor
     import torch
-    base_dir = 'C:\\database\\PDBBind\\PDBBind_processed'
+    base_dir = '/mnt/c/database/PDBBind/PDBBind_processed'
     names    = os.listdir(base_dir)
     print(len(names))
-    from multiprocessing import Pool, freeze_support
-    freeze_support()
-    pool = Pool(5)
+    # from multiprocessing import Pool, freeze_support
+    # freeze_support()
+    # pool = Pool(5)
     for n in names:
-        pool.apply_async(func=generate_pyg_feature_file, args=(n,))
-        # generate_pyg_feature_file(n)
-    pool.close()
-    pool.join()
+        # pool.apply_async(func=generate_pyg_feature_file, args=(n,))
+        generate_pyg_feature_file(n)
+    # pool.close()
+    # pool.join()
     # for n in names:
     #     print(n)
     #     generate_pyg_feature_file(n)

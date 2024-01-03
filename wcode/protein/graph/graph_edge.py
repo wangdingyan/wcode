@@ -5,12 +5,15 @@ from wcode.protein.biodf import filter_dataframe, save_pdb_df_to_pdb
 from wcode.protein.constant import *
 from wcode.protein.graph.graph_distance import *
 from wcode.mol._atom import featurize_atom_one_hot, featurize_atom
+from wcode.model.EGNN import fourier_encode_dist
 import networkx as nx
 import numpy as np
 import pandas as pd
 from copy import deepcopy
 from rdkit.Chem import AllChem
 from wcode.mol._bond import get_bond_features
+import torch
+
 
 # https://github.com/a-r-j/graphein/blob/master/graphein/protein/graphs.py
 ########################################################################################################################
@@ -20,8 +23,8 @@ from wcode.mol._bond import get_bond_features
 
 class EDGE_CONSTRUCTION_FUNCS():
     def __init__(self, **kwargs):
-        self.long_interaction_threshold = 2 if "long_interaction_threshold" not in kwargs else kwargs["long_interaction_threshold"]
-        self.threshold = 5 if "threshold" not in kwargs else kwargs["threshold"]
+        self.long_interaction_threshold = 1 if "long_interaction_threshold" not in kwargs else kwargs["long_interaction_threshold"]
+        self.threshold = 20 if "threshold" not in kwargs else kwargs["threshold"]
 
         self.tolerance = 0.56 if "tolerance" not in kwargs else kwargs["tolerance"]
 
@@ -70,17 +73,17 @@ class EDGE_CONSTRUCTION_FUNCS():
             mol = Chem.MolFromPDBFile(protein_file_name, sanitize=False)
             mol_idx_to_graph_nodeid = {atom.GetIdx(): nodeid for atom, nodeid in zip(mol.GetAtoms(), pdb_df['node_id'])}
 
-        for bond in mol.GetBonds():
-            n1, n2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
-            n1 = mol_idx_to_graph_nodeid[n1]
-            n2 = mol_idx_to_graph_nodeid[n2]
-            if G.has_edge(n1, n2):
-                if not "covalent" in G.edges[n1, n2]["kind"]:
-                    G.edges[n1, n2]["kind"].add("covalent")
-                G.edges[n1, n2]["bond_feature"] = get_bond_features(bond)
-            else:
-                G.add_edge(n1, n2, kind={"covalent"}, bond_feature=get_bond_features(bond))
-        return G
+            for bond in mol.GetBonds():
+                n1, n2 = bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()
+                n1 = mol_idx_to_graph_nodeid[n1]
+                n2 = mol_idx_to_graph_nodeid[n2]
+                if G.has_edge(n1, n2):
+                    if not "covalent" in G.edges[n1, n2]["kind"]:
+                        G.edges[n1, n2]["kind"].add("covalent")
+                    G.edges[n1, n2]["bond_feature"] = get_bond_features(bond)
+                else:
+                    G.add_edge(n1, n2, kind={"covalent"}, bond_feature=get_bond_features(bond))
+            return G
 
     def add_hetatm_covalent_edges(self, G: nx.Graph) -> nx.Graph:
         if len(G.graph['keep_hets']) == 0:
@@ -248,4 +251,10 @@ def add_distance_to_edges(G: nx.Graph) -> nx.Graph:
     node_map = {n: i for i, n in enumerate(G.nodes)}
     for u, v, d in G.edges(data=True):
         d["distance"] = [mat[node_map[u], node_map[v]]]
+        d["distance_fourier"] = fourier_encode_dist(torch.from_numpy(np.array(d["distance"])), include_self=False).squeeze().tolist()
+    return G
+
+def add_edge_vector(G: nx.Graph) -> nx.Graph:
+    for u, v, d in G.edges(data=True):
+        d["direction_vector"] = np.array(G.nodes[v]["coords"]-G.nodes[u]["coords"]) / np.linalg.norm(np.array(G.nodes[v]["coords"]-G.nodes[u]["coords"]))
     return G

@@ -342,3 +342,25 @@ def _norm_no_nan(x, axis=-1, keepdims=False, eps=1e-8, sqrt=True):
     '''
     out = torch.clamp(torch.sum(torch.square(x), axis, keepdims), min=eps)
     return torch.sqrt(out) if sqrt else out
+
+
+def randn(n, dims, device="cpu"):
+    '''
+    Returns random tuples (s, V) drawn elementwise from a normal distribution.
+
+    :param n: number of data points
+    :param dims: tuple of dimensions (n_scalar, n_vector)
+
+    :return: (s, V) with s.shape = (n, n_scalar) and
+             V.shape = (n, n_vector, 3)
+    '''
+    return torch.randn(n, dims[0], device=device), \
+        torch.randn(n, dims[1], 3, device=device)
+
+if __name__ == '__main__':
+    nodes = randn(n=20, dims=(10, 2))
+    edges = randn(n=10, dims=(5, 1))  # 10 random edges
+    edge_index = torch.randint(0, 20, (2, 10))
+    conv = GVPConv((10, 2), (10, 2), (5, 1))
+    out = conv(nodes, edge_index, edges)
+    print(out[0].shape, (out[1].shape))

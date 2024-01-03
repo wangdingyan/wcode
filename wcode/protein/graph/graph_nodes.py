@@ -7,10 +7,11 @@ import os
 from copy import deepcopy
 from tempfile import TemporaryDirectory
 from wcode.protein.constant import STANDARD_RESI_NAMES, PROTEIN_ATOMS, ATOM_SYMBOL, DSSP_COLS, STANDARD_AMINO_ACID_MAPPING_1_TO_3, DSSP_SS
-from wcode.protein.biodf import save_pdb_df_to_pdb
+from wcode.protein.biodf import save_pdb_df_to_pdb, compute_rgroup_dataframe, filter_dataframe
 from wcode.mol._atom import featurize_atom, featurize_atom_one_hot
 from wcode.utils.dependency import is_tool
 from wcode.protein.seq.embedding import esm_residue_embedding
+from wcode.protein.seq.utils import subset_by_node_feature_value
 from Bio.PDB.DSSP import dssp_dict_from_pdb_file, residue_max_acc
 from rdkit import Chem
 
@@ -100,6 +101,39 @@ def add_nodes_to_graph(
 
     nx.set_node_attributes(G, dict(zip(nodes, rdkit_atom_feature)), "rdkit_atom_feature")
     nx.set_node_attributes(G, dict(zip(nodes, rdkit_atom_feature_one_hot)), "rdkit_atom_feature_onehot")
+
+    # Compute CA vector
+
+    CA_df = filter_dataframe(G.graph['raw_pdb_df'],
+                             'atom_name',
+                             ['CA'],
+                             True)[['chain_id', 'residue_number', 'residue_name', 'x_coord', 'y_coord', 'z_coord']]
+    CA_df['residue_id'] = (
+                CA_df["chain_id"]
+                + ":"
+                + CA_df["residue_name"]
+                + ":"
+                + CA_df["residue_number"].astype(str)
+        )
+    xyz_coords = CA_df[['x_coord', 'y_coord', 'z_coord']].to_numpy()
+
+    next_xyz_coords = np.zeros(xyz_coords.shape)
+    last_xyz_coords = np.zeros(xyz_coords.shape)
+    next_xyz_coords[:-1] = xyz_coords[1:]
+    last_xyz_coords[1:]  = xyz_coords[:-1]
+    next_CA_normalized_vector = next_xyz_coords - xyz_coords
+    next_CA_normalized_vector = next_CA_normalized_vector / np.linalg.norm(next_CA_normalized_vector, axis=-1).reshape(-1,1)
+    last_CA_normalized_vector = xyz_coords - last_xyz_coords
+    last_CA_normalized_vector = last_CA_normalized_vector / np.linalg.norm(last_CA_normalized_vector, axis=-1).reshape(-1,1)
+    ri_to_next_dict = {r:c.tolist() for r, c in zip(CA_df['residue_id'].tolist(), next_CA_normalized_vector)}
+    ri_to_last_dict = {r:c.tolist() for r, c in zip(CA_df['residue_id'].tolist(), last_CA_normalized_vector)}
+
+    for i, (n, d) in enumerate(G.nodes(data=True)):
+        if d['record_name'] != "ATOM":
+            continue
+        residue_id = G.nodes[n]['residue_id']
+        G.nodes[n]["ToNextCA"] = ri_to_next_dict[residue_id]
+        G.nodes[n]["ToLastCA"] = ri_to_last_dict[residue_id]
 
     if dssp:
         G = rsa(G)
@@ -313,6 +347,7 @@ def psi(G: nx.Graph) -> nx.Graph:
     :return: Protein graph with psi-angles values added
     :rtype: nx.Graph
     """
+
     return add_dssp_feature(G, "psi")
 
 

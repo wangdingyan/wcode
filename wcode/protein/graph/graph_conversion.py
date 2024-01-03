@@ -36,10 +36,19 @@ class GraphFormatConvertor:
             "ss",
             "ss_onehot",
 
+            # esm
+            "esm_embedding",
+
+            # node vector
+            "ToNextCA",
+            "ToLastCA",
+
             # edge feature
             "edge_index",
             "distance",
             "bond_feature",
+            "distance_fourier",
+            "direction_vector",
 
             # edge index
             "edge_index_covalent",
@@ -331,17 +340,14 @@ if __name__ == '__main__':
     # pool.close()
     # pool.join()
 
-    g, df = construct_graph(f'/mnt/c/database/PDBBind/PDBBind_processed/185l/185l_protein_processed.pdb',
-                         f'/mnt/c/data/LGDrugAI/ligand_prep/185l_ligand_prep.sdf',
-                            granularity='CA',
-                            dssp=True)
-    print(g.graph['sequence_A'])
+    g, df = construct_graph(f'/mnt/c/database/PDBBind/PDBBind_processed/10gs/10gs_protein_processed.pdb',
+                            granularity='atom',
+                            dssp=True,
+                            esm=True)
+
     converter = GraphFormatConvertor()
     G = converter.convert_nx_to_pyg(g)
-    print(G['node_id'][20:30])
-    print(G['ss'][20:30])
-    print(G['ss_onehot'][20:30])
-    print(G['rsa'][20:30])
+    print(G)
 
 
 

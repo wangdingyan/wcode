@@ -3,12 +3,12 @@ import numpy as np
 import pandas as pd
 import networkx as nx
 from biopandas.pdb import PandasPdb
-from wcode.protein.biodf import read_pdb_to_dataframe, filter_dataframe, save_pdb_df_to_pdb
-from wcode.protein.constant import BACKBONE_ATOMS, RESI_THREE_TO_1
+from wcode.protein.biodf import read_pdb_to_dataframe, compute_rgroup_dataframe
+from wcode.protein.constant import RESI_THREE_TO_1
 from wcode.protein.graph.graph_nodes import add_nodes_to_graph
-from wcode.protein.graph.graph_edge import add_distance_to_edges, EDGE_CONSTRUCTION_FUNCS
+from wcode.protein.graph.graph_edge import add_distance_to_edges, EDGE_CONSTRUCTION_FUNCS, add_edge_vector
 from wcode.pl.merge import merge_protein_ligand_file
-from rdkit import Chem
+
 
 # https://github.com/a-r-j/graphein/blob/master/graphein/protein/graphs.py
 ########################################################################################################################
@@ -39,6 +39,7 @@ def construct_graph(protein_path,
                               "EDGE_CONSTRUCTION_FUNCS().add_covalent_edges"]
     if ligand_smiles != None:
         compute_edge_funcs.append(f"EDGE_CONSTRUCTION_FUNCS(ligand_smiles=r'{ligand_smiles}').add_hetatm_covalent_edges")
+
     if ligand_path is None:
         output_path = protein_path
 
@@ -62,6 +63,7 @@ def construct_graph(protein_path,
     for f in compute_edge_funcs:
         eval(f)(g)
     g = add_distance_to_edges(g)
+    g = add_edge_vector(g)
 
     return g, df
 
@@ -165,10 +167,6 @@ def initialise_graph_with_metadata(
     return G
 
 
-def compute_rgroup_dataframe(pdb_df: pd.DataFrame) -> pd.DataFrame:
-    return filter_dataframe(pdb_df, "atom_name", BACKBONE_ATOMS, False)
-
-
 def three_to_one_with_mods(res):
     return RESI_THREE_TO_1[res]
 
@@ -189,7 +187,6 @@ if __name__ == '__main__':
     #     print(f"节点 {n} 的属性为: {data}")
     # for u, v, data in g.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
-    import torch
     # data = {"node_id": list(G.nodes())}
     # G = nx.convert_node_labels_to_integers(G)
     #

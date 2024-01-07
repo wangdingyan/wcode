@@ -1,13 +1,9 @@
-import glob
-import os.path
-
-
 from wcode.protein.graph.graph import construct_graph
 from wcode.protein.graph.graph_conversion import GraphFormatConvertor
 from wcode.protein.convert import ProtConvertor
 from wcode.model.GVP import GVPConvLayer
 import torch.nn as nn
-from torch.nn import Module, Sigmoid
+from torch.nn import Linear, Module, Sigmoid, BCELoss
 from torch_geometric.data import Batch
 import torch
 
@@ -64,42 +60,17 @@ def generate_pyg_feature_file(pdb_file):
 
     return pyg, df, g
 
-model = scoring_model()
-model.load_state_dict(torch.load("/mnt/c/tmp/pocket_prediction_model.pt"))
-model = model.cuda()
-model.eval()
 
-protein_names = glob.glob('/mnt/c/dataset/posebusters_benchmark_set/*/*.pdb')
-protein_names = [os.path.basename(n) for n in protein_names]
-finished_names = os.listdir('/mnt/c/dataset/posebusters_pocket_prediction_3')
-still_names = [n for n in protein_names if n not in finished_names]
-protein_names = [f'/mnt/c/dataset/posebusters_benchmark_set/{n.replace(".pdb", "").replace("_protein", "")}/{n}' for n in still_names]
-for n in protein_names:
-    print(n)
-
-    # base_name = os.path.basename(n)
-    # converter = ProtConvertor()
-    # nxg = converter.pdb2nx(n, pocket_only=False)[0]
-    # pyg = converter.nx2pyg(nxg)
-    # pyg = pyg.cuda()
-    # prediction = model(pyg)
-    # print(prediction)
-    # pyg['b_factor'] = prediction[0]*100
-    # pyg = pyg.cpu().detach()
-    # nx = converter.pyg2nx(pyg)
-    # df = converter.nx2df(nx)
-    # residue_bfactor = df.groupby('residue_number')['b_factor'].max()
-    # valid_residue = residue_bfactor[residue_bfactor > 50]
-    # df_out = df[df['residue_number'].isin(valid_residue.index)]
-    # if len(df_out) == 0:
-    #     valid_residue = residue_bfactor.sort_values()[::-1][:10]
-    #     df_out = df[df['residue_number'].isin(valid_residue.index)]
-    # converter.df2pdb(df_out, f"/mnt/c/dataset/posebusters_pocket_prediction_2/{base_name}")
-    pyg, df, g = generate_pyg_feature_file(n)
-    base_name = os.path.basename(n)
+if __name__ == '__main__':
+    model = scoring_model()
+    model.load_state_dict(torch.load("/mnt/c/tmp/pocket_prediction_model.pt"))
+    model = model.cuda()
+    model.eval()
+    pyg, df, g = generate_pyg_feature_file("/mnt/c/tmp/8DZT_G4P_protein.pdb")
     output = model.forward(pyg)[0]
     residue_to_bf_dict = {residue_id: b_factor.cpu().detach().item() for
                           residue_id, b_factor in zip(pyg["node_id"], output)}
+
     def update_node_id(row):
         residue_id = row["residue_id"]
         if residue_id in residue_to_bf_dict:
@@ -107,13 +78,16 @@ for n in protein_names:
         else:
             b_factor = 0
         return b_factor
+
     raw_df = g.graph["raw_pdb_df"]
     raw_df["residue_id"] = (
-            raw_df["chain_id"].apply(str)
-            + ":"
-            + raw_df["residue_name"]
-            + ":"
-            + raw_df["residue_number"].apply(str)
+        raw_df["chain_id"].apply(str)
+        + ":"
+        + raw_df["residue_name"]
+        + ":"
+        + raw_df["residue_number"].apply(str)
     )
+
+
     raw_df['b_factor'] = raw_df.apply(update_node_id, axis=1)
-    ProtConvertor.df2pdb(raw_df, f"/mnt/c/dataset/posebusters_pocket_prediction_3/{base_name}")
+    ProtConvertor.df2pdb(raw_df, "/mnt/c/tmp/NET_prediction_2.pdb")

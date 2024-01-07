@@ -298,10 +298,16 @@ class GVPConvLayer(nn.Module):
             x_ = x
             x, dh = tuple_index(x, node_mask), tuple_index(dh, node_mask)
 
-        x = self.norm[0](tuple_sum(x, self.dropout[0](dh)))
+
+        # x = self.norm[0](tuple_sum(x, self.dropout[0](dh)))
+        dh_0 = self.dropout[0](dh[0])
+        dh_1 = self.dropout[0](dh[1])
+        x = self.norm[0](tuple_sum(x, tuple((dh_0, dh_1))))
 
         dh = self.ff_func(x)
-        x = self.norm[1](tuple_sum(x, self.dropout[1](dh)))
+        dh_0 = self.dropout[1](dh[0])
+        dh_1 = self.dropout[1](dh[1])
+        x = self.norm[1](tuple_sum(x,tuple((dh_0, dh_1))))
 
         if node_mask is not None:
             x_[0][node_mask], x_[1][node_mask] = x[0], x[1]
@@ -361,6 +367,7 @@ if __name__ == '__main__':
     nodes = randn(n=20, dims=(10, 2))
     edges = randn(n=10, dims=(5, 1))  # 10 random edges
     edge_index = torch.randint(0, 20, (2, 10))
-    conv = GVPConv((10, 2), (10, 2), (5, 1))
+    conv = GVPConvLayer((10, 2), (5, 1))
+    # conv = GVPConv((10, 2), (10, 2),(5, 1))
     out = conv(nodes, edge_index, edges)
-    print(out[0].shape, (out[1].shape))
+    print(out[0].shape, out[1].shape)

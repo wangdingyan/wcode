@@ -42,7 +42,10 @@ def generate_pyg_feature_file(n):
     base_dir = "/mnt/c/database/PDBBind/PDBBind_processed"
     protein = os.path.join(base_dir, n, f'{n}_protein_processed.pdb')
     ligand = f'/mnt/c/data/LGDrugAI/ligand_prep/{n}_ligand_prep.sdf'
-    mark_pocket(protein, ligand, marked_path=os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'))
+    mark_pocket(protein,
+                ligand,
+                marked_path=os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'),
+                distance_threshold=5)
     g, df = construct_graph(os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'),
                             granularity='CA',
                             dssp=True,
@@ -50,7 +53,8 @@ def generate_pyg_feature_file(n):
                             pocket_only=False)
     converter = GraphFormatConvertor()
     pyg = converter.convert_nx_to_pyg(g)
-    torch.save(pyg, os.path.join(base_dir, n, f'{n}_pocket_marked_CA_esm_dssp.pt'))
+    torch.save(pyg, os.path.join('/mnt/c/database/PDBBind/pocket_marked_CA_esm_dssp',
+                                 f'{n}_pocket_marked_CA_esm_dssp.pt'))
     with open("/mnt/c/tmp/record.txt", 'a+') as f:
         f.write(f"{n} Success\n")
     # except:
@@ -62,23 +66,30 @@ def generate_pyg_feature_file(n):
 
 if __name__ == '__main__':
     import os
-    # sample_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'sample_data')
-    # protein_1 = os.path.join(sample_dir, '1a0q_protein_processed.pdb')
-    # ligand_1 = os.path.join(sample_dir, '1a0q_ligand.sdf')
-    # mark_pocket(protein_1, ligand_1, marked_path=os.path.join(sample_dir, '1a0q_pocket_marked.pdb'))
 
-    import os
+    from glob import glob
     from wcode.protein.graph.graph_conversion import construct_graph, GraphFormatConvertor
     import torch
     base_dir = '/mnt/c/database/PDBBind/PDBBind_processed'
     names    = os.listdir(base_dir)
+    finished_names = os.listdir('/mnt/c/database/PDBBind/pocket_marked_CA_esm_dssp')
+    finished_names = [p.split('_')[0] for p in finished_names]
+    names = [n for n in names if n not in finished_names]
+    failed_protein = ['3vd7']
+    names = [n for n in names if n not in failed_protein]
     print(len(names))
+    import random
+    random.shuffle(names)
+
     # from multiprocessing import Pool, freeze_support
     # freeze_support()
     # pool = Pool(5)
     for n in names:
         # pool.apply_async(func=generate_pyg_feature_file, args=(n,))
-        generate_pyg_feature_file(n)
+        try:
+            generate_pyg_feature_file(n)
+        except:
+            continue
     # pool.close()
     # pool.join()
     # for n in names:

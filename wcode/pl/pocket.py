@@ -75,7 +75,19 @@ if __name__ == '__main__':
     finished_names = os.listdir('/mnt/c/database/PDBBind/pocket_marked_CA_esm_dssp')
     finished_names = [p.split('_')[0] for p in finished_names]
     names = [n for n in names if n not in finished_names]
-    failed_protein = ['3vd7']
+    failed_protein = ['3vd7',
+                      '4ret',
+                      '5ukj',
+                      '3t09',
+                      '3dx0',
+                      '1qx1',
+                      '3nal',
+                      '5ul1',
+                      '3ejr',
+                      '5a3r',
+                      '3dx3',
+                      '4ycm',
+                      '5y1v']
     names = [n for n in names if n not in failed_protein]
     print(len(names))
     import random

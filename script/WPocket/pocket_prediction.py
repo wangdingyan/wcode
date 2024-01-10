@@ -65,7 +65,7 @@ def generate_pyg_feature_file(pdb_file):
     return pyg, df, g
 
 model = scoring_model()
-model.load_state_dict(torch.load("/mnt/c/tmp/pocket_prediction_model.pt"))
+model.load_state_dict(torch.load("/mnt/c/tmp/pocket_prediction_model_20240108.pt"))
 model = model.cuda()
 model.eval()
 
@@ -73,6 +73,30 @@ protein_names = glob.glob('/mnt/c/dataset/posebusters_benchmark_set/*/*.pdb')
 protein_names = [os.path.basename(n) for n in protein_names]
 finished_names = os.listdir('/mnt/c/dataset/posebusters_pocket_prediction_3')
 still_names = [n for n in protein_names if n not in finished_names]
+failed_names = ['6YQV_8K2_protein.pdb',
+                '7B2C_TP7_protein.pdb',
+                '7BHX_TO5_protein.pdb',
+                '7D0P_1VU_protein.pdb',
+                '7D6O_MTE_protein.pdb',
+                '7L00_XCJ_protein.pdb',
+                '7L03_F9F_protein.pdb',
+                '7LT0_ONJ_protein.pdb',
+                '7LZD_YHY_protein.pdb',
+                '7N7B_T3F_protein.pdb',
+                '7N7H_CTP_protein.pdb',
+                '7P1M_4IU_protein.pdb',
+                '7P2I_MFU_protein.pdb',
+                '7PIH_7QW_protein.pdb',
+                '7POM_7VZ_protein.pdb',
+                '7QE4_NGA_protein.pdb',
+                '7RZL_NPO_protein.pdb',
+                '7SUC_COM_protein.pdb',
+                '7W05_GMP_protein.pdb',
+                '7WUY_76N_protein.pdb',
+                '7X5N_5M5_protein.pdb',
+                '7ZXV_45D_protein.pdb',
+                '8AIE_M7L_protein.pdb']
+still_names = [n for n in still_names if n not in failed_names]
 protein_names = [f'/mnt/c/dataset/posebusters_benchmark_set/{n.replace(".pdb", "").replace("_protein", "")}/{n}' for n in still_names]
 for n in protein_names:
     print(n)
@@ -116,4 +140,5 @@ for n in protein_names:
             + raw_df["residue_number"].apply(str)
     )
     raw_df['b_factor'] = raw_df.apply(update_node_id, axis=1)
+    raw_df = raw_df[raw_df['b_factor'] > 0.3]
     ProtConvertor.df2pdb(raw_df, f"/mnt/c/dataset/posebusters_pocket_prediction_3/{base_name}")

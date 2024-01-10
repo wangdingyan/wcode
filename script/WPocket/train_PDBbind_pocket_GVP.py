@@ -1,24 +1,22 @@
 from glob import glob
 from wcode.model.GVP import GVPConvLayer
-from wcode.model.GINEConv import Readout
 import torch.nn as nn
-from torch.nn import Linear, Module, Sigmoid, BCELoss
+from torch.nn import Module, Sigmoid, BCELoss
 from torch_geometric.data import Batch
 import torch
 from torch.utils.data import DataLoader
 from sklearn import metrics
 from torch.optim import Adam
 from tqdm import tqdm
-from wcode.model.EGNN import fourier_encode_dist
 
 class pocket_dataset():
     def __init__(self, mode):
         paths = glob('/mnt/c/database/PDBBind/pocket_marked_CA_esm_dssp/*_dssp.pt')
         length = len(paths)
         if mode == 'train':
-            self.paths = paths[:int(length * 0.8)]
+            self.paths = paths[:int(length * 0.9)]
         elif mode == 'valid':
-            self.paths = paths[int(length * 0.8):]
+            self.paths = paths[int(length * 0.9):]
 
     def __getitem__(self, i):
         return self.paths[i]
@@ -32,7 +30,9 @@ class scoring_model(Module):
         super().__init__()
         self.linear_scalar = nn.Linear(1433, 128)
 
-        self.embedding = GVPConvLayer((128, 2),
+        self.embedding1 = GVPConvLayer((128, 2),
+                                      (8,1))
+        self.embedding2 = GVPConvLayer((128, 2),
                                       (8,1))
 
         self.read_out = nn.Linear(128, 1)
@@ -60,9 +60,13 @@ class scoring_model(Module):
         bond_scalar_feature = torch.Tensor(g.distance_fourier).float().cuda()
         bond_vector_feature = torch.Tensor(g.direction_vector).reshape(-1,1,3).float().cuda()
 
-        embedding = self.embedding(tuple((atom_scalar_feature, atom_vector_feature)),
+        embedding = self.embedding1(tuple((atom_scalar_feature, atom_vector_feature)),
+                                   edge_index,
+                                   tuple((bond_scalar_feature, bond_vector_feature)))
+        embedding = self.embedding2(tuple((embedding[0], embedding[1])),
                                    edge_index,
                                    tuple((bond_scalar_feature, bond_vector_feature)))[0]
+
 
         labels = g.b_factor.cuda().squeeze()
         output = self.activation(self.read_out(embedding).squeeze())
@@ -81,7 +85,7 @@ loss_fn = BCELoss()
 
 for e in range(200):
     with torch.no_grad():
-        torch.save(model.cpu().state_dict(), "/mnt/c/tmp/pocket_prediction_model.pt")
+        torch.save(model.cpu().state_dict(), "/mnt/c/tmp/pocket_prediction_model_20240108.pt")
         model.cuda()
         model.eval()
         test_labels = []

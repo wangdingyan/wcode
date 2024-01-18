@@ -1,6 +1,3 @@
-import os
-from wcode.protein.graph.graph_conversion import construct_graph, GraphFormatConvertor
-import torch
 from wcode.pl.merge import merge_protein_ligand_file
 from wcode.protein.biodf import read_pdb_to_dataframe, save_pdb_df_to_pdb
 from wcode.protein.graph.graph_distance import *
@@ -38,28 +35,25 @@ def mark_pocket(protein_path,
 
 
 def generate_pyg_feature_file(n):
+    basedir = "/cluster/home/wangdingyan/database/pdbbind"
     print(1, n)
-    base_dir = "/mnt/c/database/PDBBind/PDBBind_processed"
-    protein = os.path.join(base_dir, n, f'{n}_protein_processed.pdb')
-    ligand = f'/mnt/c/data/LGDrugAI/ligand_prep/{n}_ligand_prep.sdf'
+    protein_dir = os.path.join(basedir, "protein_processed")
+    protein = os.path.join(protein_dir, f'{n}_protein_processed.pdb')
+    ligand = os.path.join(basedir, f'ligand_prep/{n}_ligand_prep.sdf')
     mark_pocket(protein,
                 ligand,
-                marked_path=os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'),
-                distance_threshold=5)
-    g, df = construct_graph(os.path.join(base_dir, n, f'{n}_pocket_marked.pdb'),
+                marked_path=os.path.join(protein_dir+'_pocket_marked', f'{n}_pocket_marked.pdb'),
+                distance_threshold=6)
+    g, df = construct_graph(os.path.join(protein_dir+'_pocket_marked', f'{n}_pocket_marked.pdb'),
                             granularity='CA',
                             dssp=True,
                             esm=True,
                             pocket_only=False)
     converter = GraphFormatConvertor()
     pyg = converter.convert_nx_to_pyg(g)
-    torch.save(pyg, os.path.join('/mnt/c/database/PDBBind/pocket_marked_CA_esm_dssp',
+    torch.save(pyg, os.path.join(basedir, 'pocket_marked_CA_esm_dssp',
                                  f'{n}_pocket_marked_CA_esm_dssp.pt'))
-    with open("/mnt/c/tmp/record.txt", 'a+') as f:
-        f.write(f"{n} Success\n")
-    # except:
-    #     with open("C:\\tmp\\record.txt", 'a+') as f:
-    #         f.write(f"{n} Fail\n")
+
 
 ########################################################################################################################
 
@@ -67,28 +61,32 @@ def generate_pyg_feature_file(n):
 if __name__ == '__main__':
     import os
 
-    from glob import glob
+    import sys
+    sys.path.append('/cluster/home/wangdingyan/wcode')
     from wcode.protein.graph.graph_conversion import construct_graph, GraphFormatConvertor
     import torch
-    base_dir = '/mnt/c/database/PDBBind/PDBBind_processed'
-    names    = os.listdir(base_dir)
-    finished_names = os.listdir('/mnt/c/database/PDBBind/pocket_marked_CA_esm_dssp')
+    ligand_dir = '/cluster/home/wangdingyan/database/pdbbind/ligand_prep'
+    names    = os.listdir(ligand_dir)
+    names = [p.split('_')[0] for p in names]
+
+    finished_names = os.listdir('/cluster/home/wangdingyan/database/pdbbind/pocket_marked_CA_esm_dssp')
     finished_names = [p.split('_')[0] for p in finished_names]
+
     names = [n for n in names if n not in finished_names]
-    failed_protein = ['3vd7',
-                      '4ret',
-                      '5ukj',
-                      '3t09',
-                      '3dx0',
-                      '1qx1',
-                      '3nal',
-                      '5ul1',
-                      '3ejr',
-                      '5a3r',
-                      '3dx3',
-                      '4ycm',
-                      '5y1v']
-    names = [n for n in names if n not in failed_protein]
+    # failed_protein = ['3vd7',
+    #                   '4ret',
+    #                   '5ukj',
+    #                   '3t09',
+    #                   '3dx0',
+    #                   '1qx1',
+    #                   '3nal',
+    #                   '5ul1',
+    #                   '3ejr',
+    #                   '5a3r',
+    #                   '3dx3',
+    #                   '4ycm',
+    #                   '5y1v']
+    # names = [n for n in names if n not in failed_protein]
     print(len(names))
     import random
     random.shuffle(names)

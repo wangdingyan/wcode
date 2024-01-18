@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/cluster/home/wangdingyan/wcode/')
 from glob import glob
 from wcode.model.GVP import GVPConvLayer
 import torch.nn as nn
@@ -8,10 +10,14 @@ from torch.utils.data import DataLoader
 from sklearn import metrics
 from torch.optim import Adam
 from tqdm import tqdm
+import numpy as np
+
+import sys
+print(sys.path)
 
 class pocket_dataset():
     def __init__(self, mode):
-        paths = glob('/mnt/c/database/PDBBind/pocket_marked_CA_esm_dssp/*_dssp.pt')
+        paths = glob('/cluster/home/wangdingyan/database/pdbbind/pocket_marked_CA_esm_dssp/*_dssp.pt')
         length = len(paths)
         if mode == 'train':
             self.paths = paths[:int(length * 0.9)]
@@ -29,11 +35,11 @@ class scoring_model(Module):
     def __init__(self):
         super().__init__()
         self.linear_scalar = nn.Linear(1433, 128)
-
-        self.embedding1 = GVPConvLayer((128, 2),
-                                      (8,1))
-        self.embedding2 = GVPConvLayer((128, 2),
-                                      (8,1))
+        self.blocks = nn.ModuleList([
+            GVPConvLayer((128, 2),
+                         (8,1))
+            for _ in range(8)
+        ])
 
         self.read_out = nn.Linear(128, 1)
         self.activation = Sigmoid()
@@ -60,13 +66,14 @@ class scoring_model(Module):
         bond_scalar_feature = torch.Tensor(g.distance_fourier).float().cuda()
         bond_vector_feature = torch.Tensor(g.direction_vector).reshape(-1,1,3).float().cuda()
 
-        embedding = self.embedding1(tuple((atom_scalar_feature, atom_vector_feature)),
-                                   edge_index,
-                                   tuple((bond_scalar_feature, bond_vector_feature)))
-        embedding = self.embedding2(tuple((embedding[0], embedding[1])),
-                                   edge_index,
-                                   tuple((bond_scalar_feature, bond_vector_feature)))[0]
+        for convblock in self.blocks:
+            atom_scalar_feature_out, atom_vector_feature_out = convblock(tuple((atom_scalar_feature, atom_vector_feature)),
+                                                                 edge_index,
+                                                                 tuple((bond_scalar_feature, bond_vector_feature)))
+            atom_scalar_feature = (atom_scalar_feature_out + atom_scalar_feature) / 2
+            atom_vector_feature = (atom_vector_feature_out + atom_vector_feature) / 2
 
+        embedding = atom_scalar_feature
 
         labels = g.b_factor.cuda().squeeze()
         output = self.activation(self.read_out(embedding).squeeze())
@@ -78,27 +85,37 @@ model = scoring_model()
 model = model.cuda()
 train_dataset = pocket_dataset(mode='train')
 valid_dataset = pocket_dataset(mode='valid')
-train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True)
-valid_dataloader = DataLoader(valid_dataset, batch_size=16, shuffle=False)
+train_dataloader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+valid_dataloader = DataLoader(valid_dataset, batch_size=1, shuffle=False)
 optimizer = Adam(model.parameters(), lr=0.001)
 loss_fn = BCELoss()
 
 for e in range(200):
     with torch.no_grad():
-        torch.save(model.cpu().state_dict(), "/mnt/c/tmp/pocket_prediction_model_20240108.pt")
+        torch.save(model.cpu().state_dict(), "/cluster/home/wangdingyan/pocket_prediction_model_20240108.pt")
         model.cuda()
         model.eval()
         test_labels = []
         test_preds = []
+        auROC_list = []
+        auPRC_list = []
         for batch in tqdm(valid_dataloader):
-            o, l = model(batch)
+            try:
+                o, l = model(batch)
 
-            l = l.detach().cpu().tolist()
-            o = o.detach().cpu().tolist()
+                l = l.detach().cpu().tolist()
+                o = o.detach().cpu().tolist()
 
-            test_labels.extend(l)
-            test_preds.extend(o)
-        print(f'auROC: {metrics.roc_auc_score(test_labels, test_preds)}')
+                test_labels.extend(l)
+                test_preds.extend(o)
+                auROC_list.append(metrics.roc_auc_score(l, o))
+                auPRC_list.append(metrics.average_precision_score(l,o))
+            except:
+                pass
+        print(f'Epoch {e} Test auROC: {np.mean(auROC_list)}+-{np.std(auROC_list)}')
+        print(f'Epoch {e} Test auPRC: {np.mean(auPRC_list)}+-{np.std(auPRC_list)}')
+        print(f'Epoch {e} Total auROC: {metrics.roc_auc_score(test_labels, test_preds)}')
+        print()
     for k in tqdm(train_dataloader):
         try:
 

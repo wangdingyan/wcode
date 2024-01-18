@@ -182,8 +182,8 @@ def label_node_id(
     )
 
     # Add Alt Loc identifiers
-    df["node_id"] = df["node_id"] + ":" + df["alt_loc"].apply(str)
-    df["node_id"] = df["node_id"].str.replace(":$", "", regex=True)
+    # df["node_id"] = df["node_id"] + ":" + df["alt_loc"].apply(str)
+    # df["node_id"] = df["node_id"].str.replace(":$", "", regex=True)
     df["residue_id"] = df["node_id"]
 
     def update_node_id(row):

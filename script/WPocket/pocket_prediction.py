@@ -83,29 +83,33 @@ protein_names = glob.glob('/cluster/home/wangdingyan/database/TRSD_pdb_374_0117_
 #
 # protein_names = [f'/cluster/home/wangdingyan/database/posebuster/posebusters_benchmark_set/{n.replace(".pdb", "").replace("_protein", "")}/{n}' for n in still_names]
 for n in protein_names:
-    base_name = os.path.basename(n)
+    try:
+        base_name = os.path.basename(n)
 
-    pyg, df, g = generate_pyg_feature_file(n)
+        pyg, df, g = generate_pyg_feature_file(n)
 
-    output = model.forward(pyg)[0]
-    residue_to_bf_dict = {residue_id: b_factor.cpu().detach().item() for
-                          residue_id, b_factor in zip(pyg["node_id"], output)}
-    def update_node_id(row):
-        residue_id = row["residue_id"]
-        if residue_id in residue_to_bf_dict:
-            b_factor = residue_to_bf_dict[residue_id]
-        else:
-            b_factor = 0
-        return b_factor
-    raw_df = g.graph["raw_pdb_df"]
-    raw_df["residue_id"] = (
-            raw_df["chain_id"].apply(str)
-            + ":"
-            + raw_df["residue_name"]
-            + ":"
-            + raw_df["residue_number"].apply(str)
-    )
-    raw_df['b_factor'] = raw_df.apply(update_node_id, axis=1)
-    raw_df = raw_df[raw_df['b_factor'] > 0.5]
-    ProtConvertor.df2pdb(raw_df, f"/cluster/home/wangdingyan/database/TRSD_pdb_374_0117_new/pocket_prediction/{base_name}")
-    print(base_name, 'Success')
+        output = model.forward(pyg)[0]
+        residue_to_bf_dict = {residue_id: b_factor.cpu().detach().item() for
+                              residue_id, b_factor in zip(pyg["node_id"], output)}
+        def update_node_id(row):
+            residue_id = row["residue_id"]
+            if residue_id in residue_to_bf_dict:
+                b_factor = residue_to_bf_dict[residue_id]
+            else:
+                b_factor = 0
+            return b_factor
+        raw_df = g.graph["raw_pdb_df"]
+        raw_df["residue_id"] = (
+                raw_df["chain_id"].apply(str)
+                + ":"
+                + raw_df["residue_name"]
+                + ":"
+                + raw_df["residue_number"].apply(str)
+        )
+        raw_df['b_factor'] = raw_df.apply(update_node_id, axis=1)
+        raw_df = raw_df[raw_df['b_factor'] > 0.5]
+        ProtConvertor.df2pdb(raw_df, f"/cluster/home/wangdingyan/database/TRSD_pdb_374_0117_new/pocket_prediction/{base_name}")
+        print(base_name, 'Success')
+    except:
+        base_name = os.path.basename(n)
+        print(base_name, 'Fail')

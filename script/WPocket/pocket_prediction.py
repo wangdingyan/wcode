@@ -107,7 +107,7 @@ for n in protein_names:
                 + raw_df["residue_number"].apply(str)
         )
         raw_df['b_factor'] = raw_df.apply(update_node_id, axis=1)
-        raw_df = raw_df[raw_df['b_factor'] > 0.5]
+        raw_df = raw_df[raw_df['b_factor'] > 0.3]
         ProtConvertor.df2pdb(raw_df, f"/cluster/home/wangdingyan/database/TRSD_pdb_374_0117_new/pocket_prediction/{base_name}")
         print(base_name, 'Success')
     except:

@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
-from typing import Optional, Union, List, Any
+from typing import Any, List, Optional, Union
+
 import numpy as np
 import pandas as pd
 from biopandas.pdb import PandasPdb
@@ -10,19 +11,11 @@ from wcode.protein.graph.graph_distance import compute_distmat, get_interacting_
 
 
 def read_pdb_to_dataframe(
-    path: Optional[Union[str, os.PathLike]] = None,
-    model_index: int = 1,
-    **kwargs
+    path: Optional[Union[str, os.PathLike]] = None, model_index: int = 1, **kwargs
 ) -> pd.DataFrame:
-
-
     if isinstance(path, Path):
         path = os.fsdecode(path)
-    if (
-        path.endswith(".pdb")
-        or path.endswith(".pdb.gz")
-        or path.endswith(".ent")
-    ):
+    if path.endswith(".pdb") or path.endswith(".pdb.gz") or path.endswith(".ent"):
         atomic_df = PandasPdb().read_pdb(path)
     else:
         raise ValueError(
@@ -45,7 +38,6 @@ def filter_dataframe(
     list_of_values: List[Any],
     boolean: bool,
 ) -> pd.DataFrame:
-
     df = dataframe.copy()
     df = df[df[by_column].isin(list_of_values) == boolean]
     df.reset_index(inplace=True, drop=True)
@@ -60,7 +52,6 @@ def save_pdb_df_to_pdb(
     atoms: bool = True,
     hetatms: bool = True,
 ):
-
     atom_df = filter_dataframe(df, "record_name", ["ATOM"], boolean=True)
     hetatm_df = filter_dataframe(df, "record_name", ["HETATM"], boolean=True)
     ppd = PandasPdb()
@@ -73,18 +64,15 @@ def save_pdb_df_to_pdb(
 
 def process_dataframe(
     protein_df: pd.DataFrame,
-    granularity: str = "all",
+    granularity: str = "atom",
     chain_selection: str = "all",
     insertions: bool = False,
     alt_locs: bool = False,
     deprotonate: bool = True,
     keep_hets: List[str] = [],
-    pocket_only = False,
+    pocket_only=False,
 ) -> pd.DataFrame:
-
-    protein_df = label_node_id(protein_df,
-                               granularity=granularity,
-                               keep_hets=keep_hets)
+    protein_df = label_node_id(protein_df, granularity=granularity, keep_hets=keep_hets)
 
     atoms = filter_dataframe(
         protein_df,
@@ -113,14 +101,12 @@ def process_dataframe(
     elif granularity == "centroids":
         atoms = convert_structure_to_centroids(atoms)
     else:
-        ligand_atoms = filter_dataframe(atoms,
-                                        by_column='record_name',
-                                        list_of_values=['HETATM'],
-                                        boolean=True)
-        protein_atoms = filter_dataframe(atoms,
-                                        by_column='record_name',
-                                        list_of_values=['ATOM'],
-                                        boolean=True)
+        ligand_atoms = filter_dataframe(
+            atoms, by_column="record_name", list_of_values=["HETATM"], boolean=True
+        )
+        protein_atoms = filter_dataframe(
+            atoms, by_column="record_name", list_of_values=["ATOM"], boolean=True
+        )
         atoms = subset_structure_to_atom_type(protein_atoms, granularity)
         atoms = pd.concat([atoms, ligand_atoms])
 
@@ -141,11 +127,11 @@ def process_dataframe(
     protein_df = sort_dataframe(protein_df)
 
     if pocket_only:
-        if 'HETATM' not in protein_df['record_name'].unique():
+        if "HETATM" not in protein_df["record_name"].unique():
             pass
         else:
             retain_residue_ids = []
-            dist_mat =compute_distmat(protein_df)
+            dist_mat = compute_distmat(protein_df)
             interacting_nodes = get_interacting_atoms(10, distmat=dist_mat)
             interacting_nodes = list(zip(interacting_nodes[0], interacting_nodes[1]))
 
@@ -154,7 +140,7 @@ def process_dataframe(
                 n2 = protein_df.loc[a2, "record_name"]
                 n1_id = protein_df.loc[a1, "residue_id"]
                 n2_id = protein_df.loc[a2, "residue_id"]
-                if n1 == 'ATOM' and n2 == 'HETATM':
+                if n1 == "ATOM" and n2 == "HETATM":
                     retain_residue_ids.extend([n1_id, n2_id])
 
             retain_residue_ids = list(set(retain_residue_ids))
@@ -168,11 +154,7 @@ def process_dataframe(
     return protein_df
 
 
-def label_node_id(
-    df: pd.DataFrame,
-    granularity: str,
-    keep_hets) -> pd.DataFrame:
-
+def label_node_id(df: pd.DataFrame, granularity: str, keep_hets) -> pd.DataFrame:
     df["node_id"] = (
         df["chain_id"].apply(str)
         + ":"
@@ -208,10 +190,7 @@ def label_node_id(
     return df
 
 
-def filter_hetatms(
-    df: pd.DataFrame, keep_hets: List[str]
-) -> List[pd.DataFrame]:
-
+def filter_hetatms(df: pd.DataFrame, keep_hets: List[str]) -> List[pd.DataFrame]:
     return [df.loc[df["residue_name"] == hetatm] for hetatm in keep_hets]
 
 
@@ -224,9 +203,7 @@ def deprotonate_structure(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def remove_alt_locs(
-    df: pd.DataFrame, keep: str = "max_occupancy"
-) -> pd.DataFrame:
+def remove_alt_locs(df: pd.DataFrame, keep: str = "max_occupancy") -> pd.DataFrame:
     """
     This function removes alternatively located atoms from PDB DataFrames
     (see https://proteopedia.org/wiki/index.php/Alternate_locations). Among the
@@ -257,10 +234,7 @@ def remove_alt_locs(
     return df
 
 
-def remove_insertions(
-    df: pd.DataFrame, keep = "first"
-) -> pd.DataFrame:
-
+def remove_insertions(df: pd.DataFrame, keep="first") -> pd.DataFrame:
     # Catches unnamed insertions
     duplicates = df.duplicated(
         subset=["chain_id", "residue_number", "atom_name", "alt_loc"],
@@ -274,7 +248,6 @@ def remove_insertions(
 
 
 def convert_structure_to_centroids(df: pd.DataFrame) -> pd.DataFrame:
-
     centroids = calculate_centroid_positions(df)
     df = df.loc[df["atom_name"] == "CA"].reset_index(drop=True)
     df["x_coord"] = centroids["x_coord"]
@@ -291,14 +264,9 @@ def sort_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
-def calculate_centroid_positions(
-    atoms: pd.DataFrame
-) -> pd.DataFrame:
-
+def calculate_centroid_positions(atoms: pd.DataFrame) -> pd.DataFrame:
     centroids = (
-        atoms.groupby(
-            ["residue_number", "chain_id", "residue_name"]
-        )
+        atoms.groupby(["residue_number", "chain_id", "residue_name"])
         .mean()[["x_coord", "y_coord", "z_coord"]]
         .reset_index()
     )
@@ -310,7 +278,6 @@ def select_chains(
     protein_df: pd.DataFrame,
     chain_selection: Union[str, List[str]],
 ) -> pd.DataFrame:
-
     if chain_selection != "all":
         if isinstance(chain_selection, str):
             raise ValueError(
@@ -325,65 +292,67 @@ def select_chains(
 
     return protein_df
 
+
 def construct_pseudoatom_df(xyz_list, b_factor_list=None):
     if b_factor_list is None:
         b_factor_list = [1.00] * len(xyz_list)
-    output_df = {'record_name': [],
-                 'atom_number': [],
-                 'blank_1': [],
-                 'atom_name': [],
-                 'alt_loc': [],
-                 'residue_name': [],
-                 'blank_2': [],
-                 'chain_id': [],
-                 'residue_number': [],
-                 'insertion': [],
-                 'blank_3': [],
-                 'x_coord': [],
-                 'y_coord': [],
-                 'z_coord': [],
-                 'occupancy': [],
-                 'b_factor': [],
-                 'blank_4': [],
-                 'segment_id': [],
-                 'element_symbol': [],
-                 'charge': [],
-                 'line_idx': [],
-                 'model_id': [],
-                 'node_id': [],
-                 'residue_id': []}
+    output_df = {
+        "record_name": [],
+        "atom_number": [],
+        "blank_1": [],
+        "atom_name": [],
+        "alt_loc": [],
+        "residue_name": [],
+        "blank_2": [],
+        "chain_id": [],
+        "residue_number": [],
+        "insertion": [],
+        "blank_3": [],
+        "x_coord": [],
+        "y_coord": [],
+        "z_coord": [],
+        "occupancy": [],
+        "b_factor": [],
+        "blank_4": [],
+        "segment_id": [],
+        "element_symbol": [],
+        "charge": [],
+        "line_idx": [],
+        "model_id": [],
+        "node_id": [],
+        "residue_id": [],
+    }
 
     for i, (xyz, b_factor) in enumerate(zip(xyz_list, b_factor_list)):
-        output_df['record_name'].append('HETATM')
-        output_df['atom_number'].append(i + 1)
-        output_df['blank_1'].append('')
-        output_df['atom_name'].append('PSE')
-        output_df['alt_loc'].append('')
-        output_df['residue_name'].append('PSE')
-        output_df['blank_2'].append('')
-        output_df['chain_id'].append('P')
-        output_df['residue_number'].append(9999)
-        output_df['insertion'].append('')
-        output_df['blank_3'].append('')
-        output_df['x_coord'].append(xyz[0])
-        output_df['y_coord'].append(xyz[1])
-        output_df['z_coord'].append(xyz[2])
-        output_df['occupancy'].append(1.00)
-        output_df['b_factor'].append(b_factor)
-        output_df['blank_4'].append('')
-        output_df['segment_id'].append('0.0')
-        output_df['element_symbol'].append('X')
-        output_df['charge'].append(np.nan)
-        output_df['line_idx'].append(i)
-        output_df['model_id'].append(1)
-        output_df['node_id'].append('')
-        output_df['residue_id'].append('')
+        output_df["record_name"].append("HETATM")
+        output_df["atom_number"].append(i + 1)
+        output_df["blank_1"].append("")
+        output_df["atom_name"].append("PSE")
+        output_df["alt_loc"].append("")
+        output_df["residue_name"].append("PSE")
+        output_df["blank_2"].append("")
+        output_df["chain_id"].append("P")
+        output_df["residue_number"].append(9999)
+        output_df["insertion"].append("")
+        output_df["blank_3"].append("")
+        output_df["x_coord"].append(xyz[0])
+        output_df["y_coord"].append(xyz[1])
+        output_df["z_coord"].append(xyz[2])
+        output_df["occupancy"].append(1.00)
+        output_df["b_factor"].append(b_factor)
+        output_df["blank_4"].append("")
+        output_df["segment_id"].append("0.0")
+        output_df["element_symbol"].append("X")
+        output_df["charge"].append(np.nan)
+        output_df["line_idx"].append(i)
+        output_df["model_id"].append(1)
+        output_df["node_id"].append("")
+        output_df["residue_id"].append("")
     df = pd.DataFrame(output_df, index=None)
     return df
 
-def subset_structure_to_atom_type(
-    df: pd.DataFrame, granularity: str
-) -> pd.DataFrame:
+
+def subset_structure_to_atom_type(df: pd.DataFrame, granularity: str) -> pd.DataFrame:
     """
     Return a subset of atomic dataframe that contains only certain atom names.
 

@@ -3,7 +3,7 @@
 import os
 from functools import lru_cache, partial
 from pathlib import Path
-
+from typing import List
 import networkx as nx
 import numpy as np
 import torch
@@ -36,16 +36,18 @@ def esm_residue_embedding(
 
 
 def compute_esm_embedding(
-    sequence: str,
+    sequences: List[str],
     representation: str,
     output_layer: int = 33,
 ) -> np.ndarray:
     model, alphabet = _load_esm_model()
     batch_converter = alphabet.get_batch_converter()
 
-    data = [
-        ("protein1", sequence),
-    ]
+    # data = [
+    #     ("protein1", sequence),
+    # ]
+    data = [(f"protein_{i}", seq) for i, seq in enumerate(sequences)]
+
     batch_labels, batch_strs, batch_tokens = batch_converter(data)
 
     # Extract per-residue representations (on CPU)
@@ -67,11 +69,11 @@ def compute_esm_embedding(
             sequence_representations.append(
                 token_representations[i, 1 : len(seq) + 1].mean(0)
             )
-        return sequence_representations[0].numpy()
+        return torch.stack(sequence_representations)
 
 
 def _load_esm_model():
-    return esm.pretrained.esm1b_t33_650M_UR50S()
+    return esm.pretrained.esm2_t33_650M_UR50D()
 
 if __name__ == '__main__':
     print(compute_esm_embedding('AAAA', 'sequence'))

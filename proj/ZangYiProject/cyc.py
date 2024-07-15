@@ -9,11 +9,11 @@ from wcode.protein.seq.embedding import compute_esm_embedding
 from wcode.protein.constant import BASE_AMINO_ACIDS
 from tqdm import tqdm
 
-df = pd.read_excel('/mnt/d/nutshell/Official/GG/A-ZangYiProject/100_10_1uM.xlsx')
+df = pd.read_excel('/mnt/c/data/MyNutShell/Official/GG/A-ZangYiProject/100_10_1uM.xlsx')
 second_items = list(df.iterrows())
 second_items_sequences = [s[1]['sequence'] for s in second_items]
 
-df = pd.read_excel('/mnt/d/nutshell/Official/GG/A-ZangYiProject/GIPR.xlsx')
+df = pd.read_excel('/mnt/c/data/MyNutShell/Official/GG/A-ZangYiProject/GIPR.xlsx')
 first_items = list(df.iterrows())
 first_items_seqences = [s[1]['seq'] for s in first_items if s[1]['seq'] not in second_items_sequences]
 first_items = []
@@ -28,7 +28,7 @@ random.shuffle(second_items)
 training_dataset = []
 test_dataset = []
 
-df = pd.read_csv('/mnt/d/nutshell/Official/GG/A-ZangYiProject/round2_seq.csv')
+df = pd.read_csv('/mnt/c/data/MyNutShell/Official/GG/A-ZangYiProject/round2_seq.csv')
 round2_items = list(df.iterrows())
 round2_items_sequences = [s[1]['Seq'] for s in round2_items]
 round2_items = []
@@ -370,3 +370,5 @@ prediction = model(option_seqs_embeddings)
 output_df = pd.DataFrame({'seq': optional_seqs,
                           'prediction': prediction.detach().squeeze().numpy().tolist()})
 output_df.to_csv('/mnt/c/tmp/CQEGVLARC_optimization_prediction.csv')
+
+torch.save(model.state_dict(), '/mnt/c/tmp/model.tdict')

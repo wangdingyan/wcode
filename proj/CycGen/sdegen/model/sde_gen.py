@@ -9,7 +9,7 @@ from torch_geometric.data import Data
 from torch_geometric.utils import to_dense_adj, dense_to_sparse
 
 import sys
-sys.path.append('/mnt/c/Official/WCODE/script/CycGen')
+sys.path.append('/mnt/c/Official/WCODE/proj/CycGen')
 from sdegen import utils, layers
 from sdegen.utils import GaussianFourierProjection
 from torch.nn.modules.transformer import TransformerEncoder, TransformerEncoderLayer

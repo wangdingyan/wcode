@@ -137,7 +137,7 @@ if __name__ == '__main__':
     # struct = reconstruct_cyc_peptide(d['5f88-CP'])
     # make_pdb_file(struct, '/mnt/c/tmp/5f88-CP_rebuilt.pdb')
     d = preprocess_pdb_files('/mnt/c/tmp/peptide_cys_28')
-    with open('/mnt/c/Official/WCODE/script/CycGen/cys28.pkl', 'wb') as f:
+    with open('/mnt/c/Official/WCODE/proj/CycGen/cys28.pkl', 'wb') as f:
         pickle.dump(d, f)
 
 

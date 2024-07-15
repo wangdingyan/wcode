@@ -14,7 +14,7 @@ from sdegen.data import CycPepDataset
 
 if __name__ == '__main__':
 
-    with open('/mnt/c/Official/WCODE/script/CycGen/config.yml', 'r') as f:
+    with open('/mnt/c/Official/WCODE/proj/CycGen/config.yml', 'r') as f:
         config = yaml.safe_load(f)
     config = EasyDict(config)
 

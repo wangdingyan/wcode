@@ -194,9 +194,9 @@ if __name__ == '__main__':
     # for u, v, data in G.edges(data=True):
     #     print(f"边 ({u}, {v}) 的属性为: {data}")
 
-    g, df = construct_graph('/mnt/c/code/wcode/sample_data/1a0q_protein_processed_merge.pdb',
+    g, df = construct_graph('/mnt/d/nutshell/Official/WCODE/sample_data/1a0q_protein_processed_merge.pdb',
                         pocket_only=False,
-                        dssp=True,
+                        dssp=False,
                         esm=True,
                         granularity='CA',
                         keep_hets=[])

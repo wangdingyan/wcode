@@ -68,8 +68,8 @@ def extract_pnear(root):
 if __name__ == '__main__':
     for n_struct in [100, 1000, 10000, 100000]:
         for n in range(20):
-            # fold_pnear(f'/mnt/c/tmp/validPNEAR/A1/{n_struct}_{n}',  mpi_n=8, seq='ASP THR DASN DPRO THR DLYS ASN', n_struct=n_struct, lamd=0.5)
+            # fold_pnear(f'/mnt/c/tmp/validPNEAR/C1/{n_struct}_{n}',  mpi_n=8, seq='ASP GLN SER GLU DPRO HIS DPRO', n_struct=n_struct, lamd=0.5)
             # fold_pnear(f'/mnt/c/tmp/validPNEAR/A2/{n_struct}_{n}',  mpi_n=8, seq='ASP THR DASN DHIS THR DLYS ASN', n_struct=n_struct, lamd=0.5)
-            fold_pnear(f'/mnt/c/tmp/validPNEAR/A3/{n_struct}_{n}',  mpi_n=4, seq='ASP THR DASN PRO THR DLYS ASN', n_struct=n_struct, lamd=0.5)
+            fold_pnear(f'/mnt/c/tmp/validPNEAR/C2/{n_struct}_{n}',  mpi_n=8, seq='ASP GLN SER GLU DPRO PRO DPRO', n_struct=n_struct, lamd=0.5)
 
 

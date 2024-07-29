@@ -197,7 +197,7 @@ if __name__ == '__main__':
     g, df = construct_graph('/mnt/d/nutshell/Official/WCODE/sample_data/1a0q_protein_processed_merge.pdb',
                         pocket_only=False,
                         dssp=False,
-                        esm=True,
+                        esm=False,
                         granularity='CA',
                         keep_hets=[])
     for n, data in g.nodes(data=True):

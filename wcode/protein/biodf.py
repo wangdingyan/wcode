@@ -128,7 +128,7 @@ def process_dataframe(
 
     if pocket_only:
         if "HETATM" not in protein_df["record_name"].unique():
-            pass
+            raise ValueError("No Ligand In Structure, 'pocket_only' cannot be set to True")
         else:
             retain_residue_ids = []
             dist_mat = compute_distmat(protein_df)

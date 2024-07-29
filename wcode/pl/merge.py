@@ -4,6 +4,9 @@ from rdkit import Chem
 def merge_protein_ligand_file(protein_file,
                               ligand_file,
                               output_path=None):
+    '''
+    ligand_file: MUST be .sdf format with 3D coordinates.
+    '''
     if output_path is None:
         output_path = protein_file.replace('.pdb', '_merge.pdb')
     ligand_mol = next(Chem.SDMolSupplier(ligand_file, sanitize=False))

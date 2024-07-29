@@ -8,8 +8,35 @@ from typing import Any, Callable, List
 
 import networkx as nx
 import numpy as np
+########################################################################################################################
+def parse_fasta(file_path):
+    sequences = []
+    current_sequence = None
 
+    with open(file_path, 'r') as file:
+        for line in file:
+            line = line.strip()
+            if line.startswith('>'):
+                # This is a header line
+                if current_sequence:
+                    sequences.append(current_sequence)
+                current_sequence = {'header': line[1:], 'sequence': ''}
+            else:
+                # This is a sequence line
+                if current_sequence is not None:
+                    current_sequence['sequence'] += line
 
+        # Don't forget to add the last sequence after loop ends
+        if current_sequence:
+            sequences.append(current_sequence)
+
+    # Extract sequences from the dictionary structure
+    for seq in sequences:
+        seq['sequence'] = seq['sequence'].upper()  # Convert sequence to uppercase if needed
+
+    return sequences
+
+########################################################################################################################
 def compute_feature_over_chains(
     G: nx.Graph, func: Callable, feature_name: str
 ) -> nx.Graph:

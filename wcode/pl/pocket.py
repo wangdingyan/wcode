@@ -4,6 +4,7 @@ from wcode.protein.graph.graph_distance import *
 
 ########################################################################################################################
 
+
 def mark_pocket(protein_path,
                 ligand_path,
                 distance_threshold=8,
@@ -33,26 +34,6 @@ def mark_pocket(protein_path,
     save_pdb_df_to_pdb(protein_df, marked_path, hetatms=False)
     return None
 
-
-def generate_pyg_feature_file(n):
-    basedir = "/cluster/home/wangdingyan/database/pdbbind"
-    print(1, n)
-    protein_dir = os.path.join(basedir, "protein_processed")
-    protein = os.path.join(protein_dir, f'{n}_protein_processed.pdb')
-    ligand = os.path.join(basedir, f'ligand_prep/{n}_ligand_prep.sdf')
-    mark_pocket(protein,
-                ligand,
-                marked_path=os.path.join(protein_dir+'_pocket_marked', f'{n}_pocket_marked.pdb'),
-                distance_threshold=6)
-    g, df = construct_graph(os.path.join(protein_dir+'_pocket_marked', f'{n}_pocket_marked.pdb'),
-                            granularity='CA',
-                            dssp=True,
-                            esm=True,
-                            pocket_only=False)
-    converter = GraphFormatConvertor()
-    pyg = converter.convert_nx_to_pyg(g)
-    torch.save(pyg, os.path.join(basedir, 'pocket_marked_CA_esm_dssp',
-                                 f'{n}_pocket_marked_CA_esm_dssp.pt'))
 
 
 ########################################################################################################################

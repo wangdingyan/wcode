@@ -27,6 +27,7 @@ FOLD_PNEAR = '''mpirun -np {mpi_n} {simple_cycpep_predict}  \
                 -unmute protocols.cyclic_peptide_predict.SimpleCycpepPredictApplication_MPI_summary  \
                 -cyclic_peptide:compute_rmsd_to_lowest  >> run.log'''
 
+SPLIT_SILENT_COMMAND = '''{extract_pdbs} -in::file::silent {silent_file} -in:auto_setup_metals'''
 
 def fold_pnear(root,
                seq,
@@ -65,11 +66,23 @@ def extract_pnear(root):
     return None
 
 
+def extract_pdb_files(silent_file):
+    EXTRACT_PDBS = SPLIT_SILENT_COMMAND.format(extract_pdbs=TPATH.SILENT_SPLIT,
+                                               silent_file=silent_file)
+    subprocess.run(EXTRACT_PDBS, shell=True)
+
+
 if __name__ == '__main__':
-    for n_struct in [100, 1000, 10000, 100000]:
-        for n in range(20):
-            # fold_pnear(f'/mnt/c/tmp/validPNEAR/C1/{n_struct}_{n}',  mpi_n=8, seq='ASP GLN SER GLU DPRO HIS DPRO', n_struct=n_struct, lamd=0.5)
-            # fold_pnear(f'/mnt/c/tmp/validPNEAR/A2/{n_struct}_{n}',  mpi_n=8, seq='ASP THR DASN DHIS THR DLYS ASN', n_struct=n_struct, lamd=0.5)
-            fold_pnear(f'/mnt/c/tmp/validPNEAR/C2/{n_struct}_{n}',  mpi_n=8, seq='ASP GLN SER GLU DPRO PRO DPRO', n_struct=n_struct, lamd=0.5)
+    # for ID, seq in [('7.1', 'DASP DTHR ASN PRO DTHR LYS DASN'),
+    #                 ('7.2', 'DASP DGLN DSER DGLU PRO DHIS PRO'),
+    #                 ('7.3', 'DGLN DASP DPRO PRO DLYS THR ASP'),
+    #                 ('8.1', 'DASP DASP DPRO DTHR PRO ARG DGLN GLN'),
+    #                 ('8.2', 'DARG GLN DPRO DGLN ARG DGLU PRO GLN'),
+    #                 ('9.1', 'LYS ASP LEU DGLN DPRO PRO TYR DHIS PRO'),
+    #                 ('10.1', 'PRO GLU ALA ALA ARG DVAL DPRO ARG DLEU DTHR'),
+    #                 ('10.2', 'GLU DVAL ASP PRO DGLU DHIS DPRO ASN DALA DPRO')]:
+    #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}',  mpi_n=8, seq=seq, n_struct=10000, lamd=0.5)
+    fold_pnear(f'/mnt/c/tmp/2017_Science2/3G5Y', mpi_n=8, seq='SER ARG LYS ILE ASP ASN LEU ASP', n_struct=10000, lamd=0.5)
+    # extract_pdb_files('/mnt/c/tmp/2017_Science2/10.2/out.silent')
 
 

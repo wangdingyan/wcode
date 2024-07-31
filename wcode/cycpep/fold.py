@@ -11,7 +11,6 @@ FOLD_PNEAR = '''mpirun -np {mpi_n} {simple_cycpep_predict}  \
                 -out:file:silent out.silent \
                 -cyclic_peptide:MPI_batchsize_by_level 125  \
                 -cyclic_peptide:MPI_auto_2level_distribution  \
-                -cyclic_peptide:MPI_output_fraction 1  \
                 -cyclic_peptide:MPI_choose_highest false \
                 -cyclic_peptide:MPI_sort_by energy \
                 -score:symmetric_gly_tables true  \
@@ -23,6 +22,7 @@ FOLD_PNEAR = '''mpirun -np {mpi_n} {simple_cycpep_predict}  \
                 -min_final_hbonds 0  \
                 -cyclic_peptide:MPI_pnear_lambda {lamd}  \
                 -cyclic_peptide:MPI_pnear_kbt 0.62  \
+                -cyclic_peptide:MPI_output_fraction {frac} \
                 -mute all  \
                 -unmute protocols.cyclic_peptide_predict.SimpleCycpepPredictApplication_MPI_summary  \
                 -cyclic_peptide:compute_rmsd_to_lowest  >> run.log'''
@@ -33,6 +33,7 @@ def fold_pnear(root,
                seq,
                mpi_n=10,
                lamd=1.0,
+               frac=0.05,
                simple_cycpep_predict=TPATH.SIMPLEPEP,
                n_struct=10000):
     if not os.path.exists(root):
@@ -46,6 +47,7 @@ def fold_pnear(root,
     with open(fold_sh, 'w') as fp:
         fp.write(FOLD_PNEAR.format(mpi_n=mpi_n,
                                    lamd=lamd,
+                                   frac=frac,
                                    simple_cycpep_predict=simple_cycpep_predict,
                                    n_struct=n_struct))
 
@@ -82,7 +84,7 @@ if __name__ == '__main__':
     #                 ('10.1', 'PRO GLU ALA ALA ARG DVAL DPRO ARG DLEU DTHR'),
     #                 ('10.2', 'GLU DVAL ASP PRO DGLU DHIS DPRO ASN DALA DPRO')]:
     #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}',  mpi_n=8, seq=seq, n_struct=10000, lamd=0.5)
-    fold_pnear(f'/mnt/c/tmp/2017_Science2/3G5Y', mpi_n=8, seq='SER ARG LYS ILE ASP ASN LEU ASP', n_struct=10000, lamd=0.5)
-    # extract_pdb_files('/mnt/c/tmp/2017_Science2/10.2/out.silent')
+    # fold_pnear(f'/mnt/c/tmp/2017_Science2/3AVM', mpi_n=8, seq='SER ARG LYS ILE ASP ASN LEU ASP', n_struct=100000, lamd=0.5)
+    extract_pdb_files('/mnt/c/tmp/2017_Science2/10.1/out.silent')
 
 

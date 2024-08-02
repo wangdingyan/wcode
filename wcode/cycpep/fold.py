@@ -84,7 +84,8 @@ if __name__ == '__main__':
     #                 ('10.1', 'PRO GLU ALA ALA ARG DVAL DPRO ARG DLEU DTHR'),
     #                 ('10.2', 'GLU DVAL ASP PRO DGLU DHIS DPRO ASN DALA DPRO')]:
     #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}',  mpi_n=8, seq=seq, n_struct=10000, lamd=0.5)
-    # fold_pnear(f'/mnt/c/tmp/2017_Science2/3AVM', mpi_n=8, seq='SER ARG LYS ILE ASP ASN LEU ASP', n_struct=100000, lamd=0.5)
-    extract_pdb_files('/mnt/c/tmp/2017_Science2/10.1/out.silent')
+    # fold_pnear(f'/mnt/c/tmp/2017_Science2/3AVF', mpi_n=8, seq='ASP LEU LYS ILE ASP ASN LEU ASP', n_struct=10000, lamd=0.5)
+    extract_pdb_files('/mnt/c/tmp/2017_Science2/3AVF/out.silent')
 
-
+    # for ID, seq in [('5tu6', 'ILE ASN PRO TYR LEU TYR PRO')]:
+    #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}', mpi_n=8, seq=seq, n_struct=10000, lamd=0.5, frac=1.00)

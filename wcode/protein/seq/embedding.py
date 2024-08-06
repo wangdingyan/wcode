@@ -76,4 +76,4 @@ def _load_esm_model():
     return esm.pretrained.esm2_t33_650M_UR50D()
 
 if __name__ == '__main__':
-    print(compute_esm_embedding('AAAA', 'sequence'))
+    print(compute_esm_embedding(['AAAA'], 'residue'))

@@ -6,7 +6,7 @@ from wcode.utils.config import TPATH
 
 FOLD_PNEAR = '''mpirun -np {mpi_n} {simple_cycpep_predict}  \
                 -sequence_file seq.txt  \
-                -cyclic_peptide:cyclization_type "n_to_c_amide_bond"  \
+                -cyclic_peptide:cyclization_type "terminal_disulfide"  \
                 -nstruct {n_struct}  \
                 -out:file:silent out.silent \
                 -cyclic_peptide:MPI_batchsize_by_level 125  \
@@ -84,8 +84,8 @@ if __name__ == '__main__':
     #                 ('10.1', 'PRO GLU ALA ALA ARG DVAL DPRO ARG DLEU DTHR'),
     #                 ('10.2', 'GLU DVAL ASP PRO DGLU DHIS DPRO ASN DALA DPRO')]:
     #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}',  mpi_n=8, seq=seq, n_struct=10000, lamd=0.5)
-    # fold_pnear(f'/mnt/c/tmp/2017_Science2/3AVF', mpi_n=8, seq='ASP LEU LYS ILE ASP ASN LEU ASP', n_struct=10000, lamd=0.5)
-    extract_pdb_files('/mnt/c/tmp/2017_Science2/3AVF/out.silent')
+    fold_pnear(f'/mnt/c/tmp/2017_Science2/5DI8', mpi_n=8, seq='CYS SER ALA ARG GLY LEU GLU ASN HIS ALA ALA CYS', n_struct=50000, lamd=0.5)
+    # extract_pdb_files('/mnt/c/tmp/2017_Science2/5DI8/out.silent')
 
     # for ID, seq in [('5tu6', 'ILE ASN PRO TYR LEU TYR PRO')]:
     #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}', mpi_n=8, seq=seq, n_struct=10000, lamd=0.5, frac=1.00)

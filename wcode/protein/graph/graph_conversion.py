@@ -294,28 +294,28 @@ def get_node_type(node_id):
 # print(G)
 # from torch import isclose
 # print(isclose(G['coords'], G['rdkit_atom_feature'][:, -3:], atol=0.1).all())
-def func(name):
-    # if os.path.exists(f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pyg.pt'):
-    #     print("HERE WE ARE", name)
-    #     with open('C:\\tmp\\check.txt', 'a') as f:
-    #         f.write(f'{name} pass\n')
-    #     return
-
-    # try:
-    print(name)
-    g, df = construct_graph(f'C:\\database\\PDBBind\\PDBBind_processed\\{name}\\{name}_protein_processed.pdb',
-                        f'C:\\data\\LGDrugAI\\ligand_prep\\{name}_ligand_prep.sdf',
-                                  pocket_only=True)
-    converter = GraphFormatConvertor()
-    G = converter.convert_nx_to_pyg(g)
-    torch.save(G, f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pyg.pt')
-    save_pdb_df_to_pdb(df, f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pocket.pdb')
-    with open('C:\\tmp\\check.txt', 'a') as f:
-        check = isclose(G['coords'], G['rdkit_atom_feature'][:, -3:], atol=0.1).all()
-        f.write(f'{name} {check}\n')
-    # except:
-    #     with open('C:\\tmp\\check.txt', 'a') as f:
-    #         f.write(f'{name} Fail\n')
+# def func(name):
+#     # if os.path.exists(f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pyg.pt'):
+#     #     print("HERE WE ARE", name)
+#     #     with open('C:\\tmp\\check.txt', 'a') as f:
+#     #         f.write(f'{name} pass\n')
+#     #     return
+#
+#     # try:
+#     print(name)
+#     g, df = construct_graph(f'C:\\database\\PDBBind\\PDBBind_processed\\{name}\\{name}_protein_processed.pdb',
+#                         f'C:\\data\\LGDrugAI\\ligand_prep\\{name}_ligand_prep.sdf',
+#                                   pocket_only=True)
+#     converter = GraphFormatConvertor()
+#     G = converter.convert_nx_to_pyg(g)
+#     torch.save(G, f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pyg.pt')
+#     save_pdb_df_to_pdb(df, f'C:\\database\\PDBBind\\PDBBind_pyg_feature\\{name}_pocket.pdb')
+#     with open('C:\\tmp\\check.txt', 'a') as f:
+#         check = isclose(G['coords'], G['rdkit_atom_feature'][:, -3:], atol=0.1).all()
+#         f.write(f'{name} {check}\n')
+#     # except:
+#     #     with open('C:\\tmp\\check.txt', 'a') as f:
+#     #         f.write(f'{name} Fail\n')
 
 
 if __name__ == '__main__':

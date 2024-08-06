@@ -305,10 +305,6 @@ def centroid(X: ndarray) -> ndarray:
 
 #######################################################################################################################
 
-def rmsd_with_backbone(ref_file,
-                       input_file):
-    pass
-
 
 if __name__ == '__main__':
     # import os
@@ -339,22 +335,22 @@ if __name__ == '__main__':
     import os
     import pandas as pd
 
-    full_names = os.listdir(r'/mnt/c/tmp/2017_Science_Rosetta/3AVF/')
+    full_names = os.listdir(r'/mnt/c/tmp/2017_Science_Rosetta/5DI8/')
 
     names = []
     rmsds = []
     for name in full_names:
 
         r = rmsd_backbone(#r'D:\\nutshell\\Official\\AIPROJECT\\CycPepModel\\2017_ScienceTest\\10-1_6BEQ.pdb',
-                    '/mnt/c/tmp/ligand_89/3AVF.pdb',
-                          '/mnt/c/tmp/2017_Science_Rosetta/3AVF/'+name)
+                    '/mnt/c/tmp/ligand_89/4zks_4zks-CP.pdb',
+                          '/mnt/c/tmp/2017_Science_Rosetta/5DI8/'+name)
         print(name, r)
         names.append(name)
         rmsds.append(r)
 
-    df = pd.DataFrame({'names':names,
-                       'rmsd': rmsds})
-    df.to_csv(r'/mnt/c/tmp/2017_Science_Rosetta/3AVF.csv', index=False)
+    df = pd.DataFrame({'names': names,
+                       'rmsd':  rmsds})
+    df.to_csv(r'/mnt/c/tmp/2017_Science_Rosetta/5DI8.csv', index=False)
 
 
 

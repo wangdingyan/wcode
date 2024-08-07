@@ -74,6 +74,61 @@ def extract_pdb_files(silent_file):
     subprocess.run(EXTRACT_PDBS, shell=True)
 
 
+def add_conect_to_pdb(pdb_filename):
+    print(f'Processing file: {pdb_filename}')
+    with open(pdb_filename, 'r') as file:
+        lines = file.readlines()
+
+    first_n_atom_number = None
+    last_residue_number = None
+    last_ca_c_atom_number = None
+    last_residue_atoms = []
+
+    for line in lines:
+        if line.startswith('ATOM') or line.startswith('HETATM'):
+            atom_number = int(line[6:11].strip())
+            atom_name = line[12:16].strip()
+            residue_name = line[17:20].strip()
+            chain_id = line[21].strip()
+            residue_seq = int(line[22:26].strip())
+
+            if first_n_atom_number is None and atom_name == 'N':
+                first_n_atom_number = atom_number
+                print(f'Found first N atom: {first_n_atom_number} in file: {pdb_filename}')
+
+            if last_residue_number is None or residue_seq > last_residue_number:
+                last_residue_number = residue_seq
+                last_residue_atoms = [(atom_number, atom_name)]
+            elif residue_seq == last_residue_number:
+                last_residue_atoms.append((atom_number, atom_name))
+
+    for atom_number, atom_name in last_residue_atoms:
+        if atom_name == 'C':
+            last_ca_c_atom_number = atom_number
+            print(f'Found last C atom in the last residue: {last_ca_c_atom_number} in file: {pdb_filename}')
+
+    if first_n_atom_number is not None and last_ca_c_atom_number is not None:
+        with open(pdb_filename, 'a') as file:
+            file.write(f'CONECT {first_n_atom_number:>4} {last_ca_c_atom_number:>4}\n')
+        print(f'Added CONECT {first_n_atom_number} {last_ca_c_atom_number} to {pdb_filename}')
+    else:
+        print(f'Could not find the required atoms in {pdb_filename} to add CONECT line.')
+
+def process_pdb_files_in_directory(directory):
+    if not os.path.isdir(directory):
+        print(f"The directory {directory} does not exist.")
+        return
+
+    pdb_files = [f for f in os.listdir(directory) if f.endswith('.pdb')]
+    if not pdb_files:
+        print(f"No PDB files found in the directory {directory}.")
+        return
+
+    for pdb_filename in pdb_files:
+        full_path = os.path.join(directory, pdb_filename)
+        add_conect_to_pdb(full_path)
+
+
 if __name__ == '__main__':
     # for ID, seq in [('7.1', 'DASP DTHR ASN PRO DTHR LYS DASN'),
     #                 ('7.2', 'DASP DGLN DSER DGLU PRO DHIS PRO'),
@@ -84,8 +139,9 @@ if __name__ == '__main__':
     #                 ('10.1', 'PRO GLU ALA ALA ARG DVAL DPRO ARG DLEU DTHR'),
     #                 ('10.2', 'GLU DVAL ASP PRO DGLU DHIS DPRO ASN DALA DPRO')]:
     #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}',  mpi_n=8, seq=seq, n_struct=10000, lamd=0.5)
-    fold_pnear(f'/mnt/c/tmp/2017_Science2/5DI8', mpi_n=8, seq='CYS SER ALA ARG GLY LEU GLU ASN HIS ALA ALA CYS', n_struct=50000, lamd=0.5)
+    # fold_pnear(f'/mnt/c/tmp/2017_Science2/5DI8', mpi_n=8, seq='CYS SER ALA ARG GLY LEU GLU ASN HIS ALA ALA CYS', n_struct=50000, lamd=0.5)
     # extract_pdb_files('/mnt/c/tmp/2017_Science2/5DI8/out.silent')
 
     # for ID, seq in [('5tu6', 'ILE ASN PRO TYR LEU TYR PRO')]:
     #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}', mpi_n=8, seq=seq, n_struct=10000, lamd=0.5, frac=1.00)
+    process_pdb_files_in_directory('/mnt/c/tmp/docking_pipeline_test/3AVF_struct')

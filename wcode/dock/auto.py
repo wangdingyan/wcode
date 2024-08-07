@@ -11,8 +11,7 @@ def autodock(pdb_file,
              query_ligand,
              output_dir):
 
-    if output_dir is None:
-        os.makedirs(output_dir, exist_ok=True)
+    os.makedirs(output_dir, exist_ok=True)
     if query_ligand.endswith('.sdf'):
         ligprep(query_ligand, output_dir)
     elif query_ligand.endswith('.pdb') or query_ligand.endswith('.mae'):
@@ -29,8 +28,8 @@ def autodock(pdb_file,
 if __name__ == '__main__':
     autodock(pdb_file='/mnt/c/tmp/docking_pipeline_test/protein.pdb',
              native_ligand='/mnt/c/tmp/docking_pipeline_test/native.sdf',
-             query_ligand='/mnt/c/tmp/docking_pipeline_test/native.sdf',
-             output_dir='/mnt/c/tmp/docking_pipeline_test/output_dir1')
+             query_ligand='/mnt/c/tmp/docking_pipeline_test/docking.mae',
+             output_dir='/mnt/c/tmp/docking_pipeline_test/output_dir2')
 
     # import os
     # from glob import glob

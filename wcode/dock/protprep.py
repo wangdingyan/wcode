@@ -11,7 +11,7 @@ def protprep(input_file,
         outputfile_basename = input_file.replace('.pdb', '_protprep.mae').split('\\')[-1]
     elif input_file.endswith('.mae'):
         outputfile_basename = input_file.replace('.mae', '_protprep.mae').split('\\')[-1]
-    cmd = f'{TPATH.PROTEINPREP}  {input_file} {outputfile_basename} -fillsidechains -disulfides -assign_all_residues -rehtreat -max_states 4 -epik_pH 7.4 -epik_pHt 2.0 -antibody_cdr_scheme Kabat -samplewater -propka_pH 7.4 -fix -f S-OPLS -rmsd 0.3 -watdist 5.0 -WAIT'
+    cmd = f'{TPATH.PROTEINPREP}  {input_file} {outputfile_basename} -fillsidechains -disulfides -assign_all_residues -rehtreat -max_states 4 -epik_pH 7.4 -epik_pHt 2.0 -antibody_cdr_scheme Kabat -samplewater -propka_pH 7.4 -fix -f S-OPLS -rmsd 0.3 -watdist 5.0 -WAIT -HOST localhost:8'
 
     subprocess.run(cmd, cwd=output_dir, shell=True)
 

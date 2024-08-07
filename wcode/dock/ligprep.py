@@ -4,14 +4,15 @@ from wcode.utils.config import convert_wsl_to_windows_path, TPATH
 from wcode.utils.string import generate_random_string
 
 
-def ligprep(input_file):
+def ligprep(input_file,
+            output_dir):
+    os.makedirs(output_dir, exist_ok=True)
+    input_file = convert_wsl_to_windows_path(input_file)
 
-    dir_name = os.path.dirname(input_file)
-    inputfile_name = os.path.basename(input_file)
-    outputfile_name = inputfile_name.replace('.sdf', '_ligprep.sdf')
-    cmd = f'{TPATH.LIGPREP} -WAIT -epik -isd {inputfile_name} -osd {outputfile_name}'
+    outputfile_basename = input_file.replace('.sdf', '_ligprep.sdf').split('\\')[-1]
+    cmd = f'{TPATH.LIGPREP} -WAIT -epik -isd {input_file} -osd {outputfile_basename}'
 
-    subprocess.run(cmd, cwd=dir_name, shell=True)
+    subprocess.run(cmd, cwd=output_dir, shell=True)
 
 
 if __name__ == '__main__':

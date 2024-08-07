@@ -2,6 +2,7 @@ import os
 import numpy as np
 import tempfile
 import subprocess
+import shutil
 from rdkit import Chem
 from wcode.utils.config import TPATH, convert_wsl_to_windows_path
 
@@ -51,6 +52,7 @@ def make_grid(ligfile,
 
         cmd = CMD.format(GLIDE=TPATH.GLIDE, infile=convert_wsl_to_windows_path(os.path.join(tmpdirname, 'grid.in')))
         subprocess.run(cmd, cwd=output_dir, shell=True)
+        os.remove(pdb_file.replace('.pdb', '.mae'))
 
 
 if __name__ == '__main__':

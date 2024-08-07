@@ -24,6 +24,7 @@ class TPATH:
     GLIDE = SCHRODINGER_PATH + "glide.exe"
     LIGPREP = SCHRODINGER_PATH + "ligprep.exe"
     STRUCTCONVERT = SCHRODINGER_PATH + "utilities/structconvert.exe"
+    PROTEINPREP = SCHRODINGER_PATH + "utilities/prepwizard.exe"
 
 
 def convert_wsl_to_windows_path(wsl_path, arg='-w'):

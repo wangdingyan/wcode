@@ -144,4 +144,4 @@ if __name__ == '__main__':
 
     # for ID, seq in [('5tu6', 'ILE ASN PRO TYR LEU TYR PRO')]:
     #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}', mpi_n=8, seq=seq, n_struct=10000, lamd=0.5, frac=1.00)
-    process_pdb_files_in_directory('/mnt/c/tmp/docking_pipeline_test/3AVF_struct')
+    process_pdb_files_in_directory('/mnt/c/tmp/docking_pipeline_test/3AVF')

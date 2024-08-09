@@ -28,8 +28,8 @@ def autodock(pdb_file,
 if __name__ == '__main__':
     autodock(pdb_file='/mnt/c/tmp/docking_pipeline_test/protein.pdb',
              native_ligand='/mnt/c/tmp/docking_pipeline_test/native.sdf',
-             query_ligand='/mnt/c/tmp/docking_pipeline_test/docking.mae',
-             output_dir='/mnt/c/tmp/docking_pipeline_test/output_dir2')
+             query_ligand='/mnt/c/tmp/docking_pipeline_test/structures.mae',
+             output_dir='/mnt/c/tmp/docking_pipeline_test/output_dir5')
 
     # import os
     # from glob import glob

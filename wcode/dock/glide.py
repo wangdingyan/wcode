@@ -9,14 +9,15 @@ from wcode.utils.config import TPATH
 GLIDE_ES4 = '''GRIDFILE  {grid}
 LIGANDFILE   {ligands}
 DOCKING_METHOD   confgen
-PRECISION   SP
+PRECISION   XP
 NENHANCED_SAMPLING   4
 '''
 
 GLIDE = '''GRIDFILE  {grid}
 LIGANDFILE   {ligands}
 DOCKING_METHOD   confgen
-PRECISION   SP
+PRECISION   XP
+
 '''
 
 
@@ -35,7 +36,7 @@ def docking_failed(glide_log):
 def dock(grid_file,
          ligand_file,
          output_dir,
-         enhanced=True):
+         enhanced=False):
 
     infile = GLIDE_ES4 if enhanced else GLIDE
     with tempfile.TemporaryDirectory() as tmpdirname:
@@ -48,7 +49,7 @@ def dock(grid_file,
         if output_dir is not None:
             os.makedirs(output_dir, exist_ok=True)
 
-        glide_cmd = f'{TPATH.GLIDE} -WAIT -LOCAL -RESTART {convert_wsl_to_windows_path(glide_in)}'
+        glide_cmd = f'{TPATH.GLIDE} -WAIT -LOCAL -RESTART {convert_wsl_to_windows_path(glide_in)} -HOST localhost:12'
         subprocess.run(glide_cmd, cwd=output_dir, shell=True)
 
 

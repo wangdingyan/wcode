@@ -26,10 +26,10 @@ def autodock(pdb_file,
 
 
 if __name__ == '__main__':
-    autodock(pdb_file='/mnt/c/tmp/docking_pipeline_test/protein.pdb',
-             native_ligand='/mnt/c/tmp/docking_pipeline_test/native.sdf',
-             query_ligand='/mnt/c/tmp/docking_pipeline_test/structures.mae',
-             output_dir='/mnt/c/tmp/docking_pipeline_test/output_dir5')
+    autodock(pdb_file='/mnt/d/nutshell/Official/PAPER/NET/vilazodone_prepared.pdb',
+             native_ligand='/mnt/d/nutshell/Official/PAPER/NET/vilazodone.sdf',
+             query_ligand='/mnt/d/nutshell/Official/PAPER/NET/vilazodone_pubchem.sdf',
+             output_dir='/mnt/d/nutshell/Official/PAPER/NET/vilazodone_redocking')
 
     # import os
     # from glob import glob

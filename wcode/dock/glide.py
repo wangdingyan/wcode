@@ -9,15 +9,14 @@ from wcode.utils.config import TPATH
 GLIDE_ES4 = '''GRIDFILE  {grid}
 LIGANDFILE   {ligands}
 DOCKING_METHOD   confgen
-PRECISION   XP
+PRECISION   SP
 NENHANCED_SAMPLING   4
 '''
 
 GLIDE = '''GRIDFILE  {grid}
 LIGANDFILE   {ligands}
 DOCKING_METHOD   confgen
-PRECISION   XP
-
+PRECISION   SP
 '''
 
 

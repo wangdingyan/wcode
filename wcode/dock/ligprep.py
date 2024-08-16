@@ -5,7 +5,8 @@ from wcode.utils.string import generate_random_string
 
 
 def ligprep(input_file,
-            output_dir):
+            output_dir,
+            retain_ligand=True):
     os.makedirs(output_dir, exist_ok=True)
     input_file = convert_wsl_to_windows_path(input_file)
 

@@ -6,7 +6,7 @@ from wcode.utils.config import TPATH
 
 FOLD_PNEAR = '''mpirun -np {mpi_n} {simple_cycpep_predict}  \
                 -sequence_file seq.txt  \
-                -cyclic_peptide:cyclization_type "terminal_disulfide"  \
+                -cyclic_peptide:cyclization_type "n_to_c_amide_bond"  \
                 -nstruct {n_struct}  \
                 -out:file:silent out.silent \
                 -cyclic_peptide:MPI_batchsize_by_level 125  \
@@ -114,6 +114,7 @@ def add_conect_to_pdb(pdb_filename):
     else:
         print(f'Could not find the required atoms in {pdb_filename} to add CONECT line.')
 
+
 def process_pdb_files_in_directory(directory):
     if not os.path.isdir(directory):
         print(f"The directory {directory} does not exist.")
@@ -144,4 +145,16 @@ if __name__ == '__main__':
 
     # for ID, seq in [('5tu6', 'ILE ASN PRO TYR LEU TYR PRO')]:
     #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}', mpi_n=8, seq=seq, n_struct=10000, lamd=0.5, frac=1.00)
-    process_pdb_files_in_directory('/mnt/c/tmp/docking_pipeline_test/3AVF')
+    # process_pdb_files_in_directory('/mnt/c/tmp/docking_pipeline_test/3AVF')
+    from wcode.cycpep.utils import generate_random_sequence
+    seqs = generate_random_sequence(20)
+    seqs.extend(['DASP DTHR ASN PRO DTHR LYS DASN',
+                 'DASP DGLN DSER DGLU PRO DHIS PRO',
+                 'DGLN DASP DPRO PRO DLYS THR ASP',
+                 'DASP DASP DPRO DTHR PRO ARG DGLN GLN',
+                 'DARG GLN DPRO DGLN ARG DGLU PRO GLN'])
+    for num in [100, 300, 1000, 3000, 10000, 30000, 100000, 300000]:
+        for seq in seqs:
+            for t in range(10):
+                print(num, seq, t)
+                fold_pnear(f'/mnt/c/tmp/PRCyc/{seq}/{str(num)}/{str(t)}', mpi_n=8, seq=seq, n_struct=num, lamd=0.5, frac=1)

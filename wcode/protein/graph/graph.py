@@ -20,6 +20,7 @@ def construct_graph(protein_path,
                     keep_hets=[],
                     smiles=None,
                     granularity='atom',
+                    ca_vector=False,
                     dssp=False,
                     esm=False,
                     pocket_only=False,
@@ -57,6 +58,7 @@ def construct_graph(protein_path,
 
     g = add_nodes_to_graph(g,
                            verbose=verbose,
+                           ca_vector=ca_vector,
                            dssp=dssp,
                            esm=esm)
 

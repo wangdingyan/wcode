@@ -1,7 +1,8 @@
 import copy
 import json
 from rdkit import Chem
-from rdkit.Chem import AllChem, MolStandardize, Mol
+from rdkit.Chem.MolStandardize import rdMolStandardize
+from rdkit.Chem import AllChem
 from rdkit.Chem.AllChem import RemoveHs
 from six.moves.urllib.request import urlopen
 from six.moves.urllib.parse import quote
@@ -66,7 +67,7 @@ class SmilesConverter():
         if removechiral:
             smiles = smiles.replace('@', '')
         mol = Chem.MolFromSmiles(smiles)
-        lfc = MolStandardize.fragment.LargestFragmentChooser()
+        lfc = rdMolStandardize.LargestFragmentChooser()
 
         if mol is not None:
             mol2 = lfc.choose(mol)

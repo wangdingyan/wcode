@@ -14,8 +14,8 @@ if (`cat $rootdir/bind/Download.jsp`=~/(BindingDB_All_\w+.tsv.zip)/)
     system("wget -q --no-check-certificate 'https://www.bindingdb.org/rwd/bind/downloads/$outfile' -O $rootdir/bind/BindingDB_All_tsv.zip");
     if (-s "$rootdir/bind/BindingDB_All_tsv.zip")
     {
-        system("zcat $rootdir/bind/BindingDB_All_tsv.zip| cut -f9-14,27,28,42,43,47|  head -1 > $rootdir/bind/BindingDB.tsv");
-        system("zcat $rootdir/bind/BindingDB_All_tsv.zip| cut -f9-14,27,28,42,43,47|grep -P '\\S+\\t\\S+\\t\\S*\\t\\S*\\t\\S*\$' |grep -vP '\\t\\t\\t\$'  >> $rootdir/bind/BindingDB.tsv");
+        system("zcat $rootdir/bind/BindingDB_All_tsv.zip| cut -f9-14,28,29,43,44,48|  head -1 > $rootdir/bind/BindingDB.tsv");
+        system("zcat $rootdir/bind/BindingDB_All_tsv.zip| cut -f9-14,28,29,43,44,48|  grep -P '\\S+\\t\\S+\\t\\S*\\t\\S*\\t\\S*\$' |grep -vP '\\t\\t\\t\$'  >> $rootdir/bind/BindingDB.tsv");
         &gzipFile("$rootdir/bind/BindingDB.tsv");
     }
 }

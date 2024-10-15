@@ -84,15 +84,20 @@ if __name__ == "__main__":
         print('The code uses CPU!!!')
 
     scores = []
+    sequences = []
+    cpd = []
     import pandas as pd
-    df = pd.read_csv('/mnt/c/tmp/lgths_sheet3.csv')
+    df = pd.read_csv('/mnt/c/data/MyNutShell/Official/AIPROJECT/JHW/berberine.csv')
     for item in df.iterrows():
-        uniprot_id = item[1]['PG.ProteinAccessions']
+        uniprot_id = item[1]['uniprot_id']
         model = torch.load('/home/fluoxetine/transformerCPI2.0/DrugRepurpose.pt')  # Load trained model
         model.to(device)
         from wcode.database.uniprot import id2seq
         sequence = id2seq(uniprot_id)
-        smiles = "CC1=C(C(=O)C=C2C1=CC=C3[C@]2(CC[C@@]4([C@@]3(CC[C@@]5([C@H]4C[C@](CC5)(C)C(=O)O)C)C)C)C)O"
+        sequences.append(sequence)
+        print(uniprot_id, sequence)
+        smiles = "COC1=C(C2=C[N+]3=C(C=C2C=C1)C4=CC5=C(C=C4CC3)OCO5)OC"
+        cpd.append(smiles)
 
         compounds, adjacencies, proteins = featurizer(smiles, sequence)
         tester = Tester(model, device)
@@ -102,6 +107,8 @@ if __name__ == "__main__":
         scores.append(score)
         print(uniprot_id, score)
 
+    df['smiles'] = cpd
+    df['sequences'] = sequences
     df['scores'] = scores
     df.to_csv('/mnt/c/tmp/lgths_sheet_3_after_score.csv')
 

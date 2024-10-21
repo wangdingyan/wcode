@@ -3,7 +3,6 @@ import os
 import subprocess
 from wcode.utils.config import TPATH
 
-
 FOLD_PNEAR = '''mpirun -np {mpi_n} {simple_cycpep_predict}  \
                 -sequence_file seq.txt  \
                 -cyclic_peptide:cyclization_type "n_to_c_amide_bond"  \
@@ -29,6 +28,7 @@ FOLD_PNEAR = '''mpirun -np {mpi_n} {simple_cycpep_predict}  \
 
 SPLIT_SILENT_COMMAND = '''{extract_pdbs} -in::file::silent {silent_file} -in:auto_setup_metals'''
 
+
 def fold_pnear(root,
                seq,
                mpi_n=10,
@@ -36,7 +36,10 @@ def fold_pnear(root,
                frac=0.05,
                simple_cycpep_predict=TPATH.SIMPLEPEP,
                n_struct=10000):
-    if not os.path.exists(root):
+    if os.path.exists(root):
+        print(f'OutputDir ({root}) exists, pass.')
+        return None
+    else:
         os.makedirs(root, exist_ok=True)
     seq_file = '{}/seq.txt'.format(root)
     fold_sh = '{}/fold.sh'.format(root)
@@ -55,7 +58,7 @@ def fold_pnear(root,
 
 
 def extract_pnear(root):
-    log_file ='{}/run.log'.format(root)
+    log_file = '{}/run.log'.format(root)
 
     with open(log_file, 'r') as f:
         for line in f:
@@ -147,6 +150,7 @@ if __name__ == '__main__':
     #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}', mpi_n=8, seq=seq, n_struct=10000, lamd=0.5, frac=1.00)
     # process_pdb_files_in_directory('/mnt/c/tmp/docking_pipeline_test/3AVF')
     from wcode.cycpep.utils import generate_random_sequence
+
     seqs = generate_random_sequence(50)
     seqs.extend(['DASP DTHR ASN PRO DTHR LYS DASN',
                  'DASP DGLN DSER DGLU PRO DHIS PRO',

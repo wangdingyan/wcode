@@ -5,5 +5,5 @@ for fil in file_names:
         lines = f.readlines()
     for l in lines:
         if 'rna' in l and l.startswith(">"):
-            print(l.strip())
+            print(fil, l.strip())
 

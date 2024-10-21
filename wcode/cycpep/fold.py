@@ -147,14 +147,22 @@ if __name__ == '__main__':
     #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}', mpi_n=8, seq=seq, n_struct=10000, lamd=0.5, frac=1.00)
     # process_pdb_files_in_directory('/mnt/c/tmp/docking_pipeline_test/3AVF')
     from wcode.cycpep.utils import generate_random_sequence
-    seqs = generate_random_sequence(20)
+    seqs = generate_random_sequence(50)
     seqs.extend(['DASP DTHR ASN PRO DTHR LYS DASN',
                  'DASP DGLN DSER DGLU PRO DHIS PRO',
                  'DGLN DASP DPRO PRO DLYS THR ASP',
                  'DASP DASP DPRO DTHR PRO ARG DGLN GLN',
-                 'DARG GLN DPRO DGLN ARG DGLU PRO GLN'])
-    for num in [100, 300, 1000, 3000, 10000, 30000, 100000, 300000]:
+                 'DARG GLN DPRO DGLN ARG DGLU PRO GLN',
+                 'LYS ASP LEU DGLN DPRO PRO TYR DHIS PRO',
+                 'PRO GLU ALA ALA ARG DVAL DPRO ARG DLEU DTHR',
+                 'GLU DVAL ASP PRO DGLU DHIS DPRO ASN DALA DPRO'])
+    for num in [3000, 10000, 30000, 100000, 300000]:
         for seq in seqs:
-            for t in range(10):
+            for t in range(3):
                 print(num, seq, t)
-                fold_pnear(f'/mnt/c/tmp/PRCyc/{seq}/{str(num)}/{str(t)}', mpi_n=8, seq=seq, n_struct=num, lamd=0.5, frac=1)
+                fold_pnear(f'/mnt/d/tmp/PRCyc/{seq}/{str(num)}/{str(t)}',
+                           mpi_n=8,
+                           seq=seq,
+                           n_struct=num,
+                           lamd=0.5,
+                           frac=1)

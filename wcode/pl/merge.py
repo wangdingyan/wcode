@@ -1,5 +1,6 @@
 from rdkit import Chem
 
+########################################################################################################################
 
 def merge_protein_ligand_file(protein_file,
                               ligand_file,

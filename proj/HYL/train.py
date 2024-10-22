@@ -50,6 +50,7 @@ class RNNModel(nn.Module):
         super(RNNModel, self).__init__()
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers=num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, output_size)
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         # 使用 LSTM 处理序列
@@ -59,7 +60,7 @@ class RNNModel(nn.Module):
         last_out = lstm_out[:, -1, :]  # (batch_size, hidden_size)
 
         # 通过全连接层进行预测
-        output = self.fc(last_out)  # (batch_size, output_size)
+        output = self.sigmoid(self.fc(last_out))  # (batch_size, output_size)
         return output
 
 
@@ -89,7 +90,7 @@ def fit(model, dataset):
     loss_fn = nn.MSELoss()
     optimizer = optim.Adam(model.parameters(), lr=0.001)
     dl = DataLoader(dataset, batch_size=16, collate_fn=collate_fn, shuffle=True)
-    for e in range(300):
+    for e in range(500):
         for b in dl:
             optimizer.zero_grad()
             input_embedding, labels = b
@@ -117,7 +118,7 @@ def test(model, dataset):
         labels.extend(label.cpu().detach().tolist())
         predictions.extend(prediction.cpu().detach().tolist())
 
-    return round(pearsonr(predictions, labels)[0], 3)
+    return pearsonr(predictions, labels)[0]
 
 
 if __name__ == '__main__':
@@ -128,9 +129,15 @@ if __name__ == '__main__':
     PROJECTDIR = '/mnt/d/tmp/CycPepAL'
     TRAIN_DIR = os.path.join(PROJECTDIR, 'train_dataset')
     TEST_DIR = os.path.join(PROJECTDIR, 'test_dataset')
+    MODEL_DIR = os.path.join(PROJECTDIR, 'model_checkpoint')
+    LOG_DIR = os.path.join(PROJECTDIR, 'log')
     makedir(PROJECTDIR)
     makedir(TRAIN_DIR)
     makedir(TEST_DIR)
+    makedir(MODEL_DIR)
+    makedir(LOG_DIR)
+    with open(os.path.join(LOG_DIR, f'test_set.tsv'), 'a+') as f:
+        f.write('ROUND\tPearsonR\n')
 
     print("2. 建立测试集")
     test_seqs = generate_random_sequence(10, 7)
@@ -167,6 +174,81 @@ if __name__ == '__main__':
     s2 = test(model, test_dataset)
     print(f"Before Training, PearsonR {s1}")
     print(f"After Training, PearsonR {s2}")
+
+    print("6. 主动学习过程")
+    print("***初始化模型***")
+    model = RNNModel()
+    torch.save(model.state_dict(), os.path.join(MODEL_DIR, 'round_0.pth'))
+
+    model = model.cuda()
+    for round in range(1, 10000):
+        print(f'*** 加载现有训练集 ***')
+        training_set = Dataset(TRAIN_DIR)
+        training_seqs = training_set.seqs
+
+        print(f'*** Round {round} 生成10000个候选序列')
+        score_seqs = []
+        while len(score_seqs) < 10000:
+            if random.random() < 0.5:
+                seq = generate_random_sequence(1, 7)[0]
+            else:
+                seq = generate_random_sequence(1, 8)[0]
+            if seq in training_seqs:
+                continue
+            else:
+                score_seqs.append(seq)
+
+        print(f'*** Round {round} 生成10000个候选序列的表征')
+        seqs_embeddings = amino_acid_one_hot_batch(score_seqs)
+
+        print(f'*** Round {round} 使用模型对10000个候选序列进行预测与打分')
+        seqs_scores = []
+        temp_dl = DataLoader(seqs_embeddings, batch_size=100, shuffle=False, drop_last=False)
+        for temp_b in temp_dl:
+            temp_b = temp_b.cuda()
+            temp_pred = model(temp_b)
+            seqs_scores.extend(temp_pred.cpu().detach().squeeze().tolist())
+
+        print(f'*** Round {round} 挑选前5名进行折叠，生成label')
+        top_k = 5
+        _, top_indices = torch.topk(torch.Tensor(seqs_scores), top_k)
+        top_seqs = [score_seqs[i] for i in top_indices.numpy()]
+        top_scores = [seqs_scores[i] for i in top_indices.numpy()]
+
+        for seq in top_seqs:
+            print(f'folding {seq}')
+            fold_pnear(os.path.join(TRAIN_DIR, seq),
+                       mpi_n=8,
+                       seq=seq,
+                       n_struct=1000,
+                       lamd=0.5,
+                       frac=1)
+
+        top_labels = [extract_pnear(os.path.join(TRAIN_DIR, s)) for s in top_seqs]
+        with open(os.path.join(LOG_DIR, f'round_{round}_train_pred.tsv'), 'a+') as f:
+            f.write('SEQ\tPRED\tLABEL\n')
+            for i in range(len(top_seqs)):
+                f.write(f'{top_seqs[i]}\t{top_scores[i]}\t{top_labels[i]}\n')
+
+        print(f'*** Round {round} 利用训练集更新训练模型')
+        train_dataset = Dataset(TRAIN_DIR)
+        s1 = test(model, train_dataset)
+        model = fit(model, train_dataset)
+        s2 = test(model, train_dataset)
+        print(f"Before Training, PearsonR {s1}")
+        print(f"After Training, PearsonR {s2}")
+
+        torch.save(model.state_dict(), os.path.join(MODEL_DIR, f'round_{round}.pth'))
+
+        print(f'*** Round {round} 对测试集进行测试')
+        test_dataset = Dataset(TEST_DIR)
+        s = test(model, test_dataset)
+        with open(os.path.join(LOG_DIR, f'test_set.tsv'), 'a+') as f:
+            f.write(f'{round}\t{s}\n')
+
+
+
+
 
 
 

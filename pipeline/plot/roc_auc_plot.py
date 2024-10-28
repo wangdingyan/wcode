@@ -2,12 +2,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
-# 读取数据
-file_path = "/mnt/c/tmp/test_set_prediction_round2.csv"
-df = pd.read_csv(file_path)
+# DataPreparation
+# **********************************************************************************************************************
+# labels = ***
+# predictions = ***
+labels = [1, 0, 1, 0, 1, 0, 1]
+predictions = [0.1, 0.2, 0.3, 0.2, 0.8, 0.1, 0.3]
+# **********************************************************************************************************************
 
 # 计算 ROC 曲线的参数
-fpr, tpr, thresholds = roc_curve(df['test_labels'], df['test_predictions'])
+fpr, tpr, thresholds = roc_curve(labels, predictions)
 roc_auc = auc(fpr, tpr)
 
 # 设置绘图参数

@@ -1,8 +1,5 @@
 # https://github.com/a-r-j/graphein/blob/master/graphein/protein/features/sequence/embeddings.py
 
-import os
-from functools import lru_cache, partial
-from pathlib import Path
 from typing import List
 import networkx as nx
 import numpy as np
@@ -67,7 +64,7 @@ def compute_esm_embedding(
         sequence_representations = []
         for i, (_, seq) in enumerate(data):
             sequence_representations.append(
-                token_representations[i, 1 : len(seq) + 1].mean(0)
+                token_representations[i, 1: len(seq) + 1].mean(0)
             )
         return torch.stack(sequence_representations)
 
@@ -75,5 +72,9 @@ def compute_esm_embedding(
 def _load_esm_model():
     return esm.pretrained.esm2_t33_650M_UR50D()
 
+
 if __name__ == '__main__':
-    print(compute_esm_embedding(['AAAA'], 'residue'))
+    print(compute_esm_embedding(['CCCCCC'], 'residue').shape)
+    # (1, 8, 1280)
+    print(compute_esm_embedding(['AAAA', 'CCCCCC'], 'residue').shape)
+    # (2, 8, 1280)

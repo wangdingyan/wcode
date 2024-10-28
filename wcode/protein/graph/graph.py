@@ -25,7 +25,6 @@ def construct_graph(protein_path,
                     esm=False,
                     pocket_only=False,
                     verbose=False):
-
     keep_hets = copy.deepcopy(keep_hets)
     ligand_smiles = None
     if ligand_path:
@@ -39,7 +38,8 @@ def construct_graph(protein_path,
         compute_edge_funcs = ["EDGE_CONSTRUCTION_FUNCS(threshold=4.0).add_edges_with_distance_threshold",
                               "EDGE_CONSTRUCTION_FUNCS().add_covalent_edges"]
     if ligand_smiles != None:
-        compute_edge_funcs.append(f"EDGE_CONSTRUCTION_FUNCS(ligand_smiles=r'{ligand_smiles}').add_hetatm_covalent_edges")
+        compute_edge_funcs.append(
+            f"EDGE_CONSTRUCTION_FUNCS(ligand_smiles=r'{ligand_smiles}').add_hetatm_covalent_edges")
 
     if ligand_path is None:
         output_path = protein_path
@@ -73,7 +73,7 @@ def construct_graph(protein_path,
 def nxg_to_df(g):
     output_df = {'record_name': [],
                  'atom_number': [],
-                 'blank_1':[],
+                 'blank_1': [],
                  'atom_name': [],
                  'alt_loc': [],
                  'residue_name': [],
@@ -99,7 +99,7 @@ def nxg_to_df(g):
     for i, (n, data) in enumerate(g.nodes(data=True)):
         chain_id, residue_name, residue_number, atom_type = data['node_id'].split(':')
         output_df['record_name'].append(data['record_name'])
-        output_df['atom_number'].append(i+1)
+        output_df['atom_number'].append(i + 1)
         output_df['blank_1'].append('')
         output_df['atom_name'].append(atom_type)
         output_df['alt_loc'].append('')
@@ -130,12 +130,11 @@ def nxg_to_df(g):
 ########################################################################################################################
 
 def initialise_graph_with_metadata(
-    protein_df: pd.DataFrame,
-    raw_pdb_df: pd.DataFrame,
-    keep_hets,
-    granularity='atom',
+        protein_df: pd.DataFrame,
+        raw_pdb_df: pd.DataFrame,
+        keep_hets,
+        granularity='atom',
 ) -> nx.Graph:
-
     G = nx.Graph(
         chain_ids=list(protein_df["chain_id"].unique()),
         pdb_df=protein_df,
@@ -155,7 +154,7 @@ def initialise_graph_with_metadata(
                 protein_df.loc[
                     (protein_df["chain_id"] == c)
                     & (protein_df["atom_name"] == "CA")
-                ]["residue_name"]
+                    ]["residue_name"]
                 .apply(three_to_one_with_mods)
                 .str.cat()
             )
@@ -173,52 +172,12 @@ def three_to_one_with_mods(res):
     return RESI_THREE_TO_1[res]
 
 
-
-
-
 if __name__ == '__main__':
-    # g = construct_graph('/mnt/d/tmp/5p21.pdb',
-    #                     verbose=True,
-    #                     smiles='O=P(O)(O)NP(=O)(O)OP(=O)(O)OCC1C(O)C(O)C(O1)n(cn2)c(c23)nc(N)[nH]c3=O',
-    #                     keep_hets=['GNP'],
-    #                     pocket_only=True)
-    # print(g)
-    # print(list(g.edges))
-    # print(g)
-    # for n, data in g.nodes(data=True):
-    #     print(f"节点 {n} 的属性为: {data}")
-    # for u, v, data in g.edges(data=True):
-    #     print(f"边 ({u}, {v}) 的属性为: {data}")
-    # data = {"node_id": list(G.nodes())}
-    # G = nx.convert_node_labels_to_integers(G)
-    #
-    # print(list(G.edges(data=True)))
-    # for u, v, data in G.edges(data=True):
-    #     print(f"边 ({u}, {v}) 的属性为: {data}")
-
     g, df = construct_graph('/mnt/d/nutshell/Official/WCODE/sample_data/1a0q_protein_processed_merge.pdb',
-                        pocket_only=False,
-                        dssp=False,
-                        esm=False,
-                        granularity='CA',
-                        keep_hets=[])
+                            pocket_only=False,
+                            dssp=False,
+                            esm=True,
+                            granularity='CA',
+                            keep_hets=[])
     for n, data in g.nodes(data=True):
         print(f"节点 {n} 的属性为: {data}")
-    # for u, v, data in g.edges(data=True):
-    #     print(f"边 ({u}, {v}) 的属性为: {data}")
-    # print(df['blank_1'][1][0])
-    # print(len(df))
-    # print(df.columns)
-    # print(df['node_id'])
-    # print(list(g.nodes(data=True))[65])
-    # test_df = nxg_to_df(g)
-    # save_pdb_df_to_pdb(test_df, 'C:\\tmp\\20231219.pdb')
-
-
-
-
-
-
-
-
-

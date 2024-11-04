@@ -1,16 +1,18 @@
 import os
 from typing import List
+
+from wcode.cycpep.data import Dataset
 from wcode.cycpep.fold import fold_pnear, extract_pnear
 from wcode.cycpep.utils import generate_random_sequence
 from wcode.protein.constant import STANDARD_AMINO_ACID_MAPPING_3_TO_1
-from wcode.protein.seq.embedding import compute_esm_embedding
+from wcode.protein.seq.embedding import compute_esm_embedding, compute_sequence_embeddings_fast
 import random
 import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.utils.data import DataLoader
-from scipy.stats import spearmanr
+from sklearn.metrics import roc_auc_score
 from tqdm import tqdm
 
 
@@ -77,7 +79,7 @@ def compute_sequence_embeddings(sequences: List[str],
 
 
 class TransformerModel(nn.Module):
-    def __init__(self, input_size=1282, hidden_size=128, output_size=1, num_layers=4, num_heads=8, ff_hidden_size=256):
+    def __init__(self, input_size=35, hidden_size=64, output_size=2, num_layers=3, num_heads=4, ff_hidden_size=64):
         super(TransformerModel, self).__init__()
 
         self.embedding = nn.Linear(input_size, hidden_size)  # 输入嵌入层
@@ -89,7 +91,8 @@ class TransformerModel(nn.Module):
             num_layers=num_layers
         )
         self.fc = nn.Linear(hidden_size, output_size)
-        self.sigmoid = nn.Sigmoid()
+
+        #self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         # 输入嵌入
@@ -109,32 +112,6 @@ class TransformerModel(nn.Module):
         return output
 
 
-class Dataset():
-    def __init__(self, dataset_dir):
-        self.embedding_dict = None
-        self.dataset_dir = dataset_dir
-        self.seqs = os.listdir(self.dataset_dir)
-        print("Computing Dataset Embeddings...")
-        self.compute_seqs_embeddings()
-
-    def __getitem__(self, index):
-        s = self.seqs[index]
-        label = extract_pnear(os.path.join(self.dataset_dir, s))
-        return s, label
-
-    def __len__(self):
-        return len(self.seqs)
-
-    def compute_seqs_embeddings(self):
-        embeddings = compute_sequence_embeddings(self.seqs)
-        self.embedding_dict = {s: emb for s, emb in zip(self.seqs, embeddings)}
-    
-    def select_embeddings_from_seqs(self, test_sequences):
-        embeddings = [self.embedding_dict[s] for s in test_sequences]
-        embeddings = torch.stack(embeddings)
-        return embeddings
-
-
 def collate_fn(batch):
     seqs = [i[0] for i in batch]
     labels = [i[1] for i in batch]
@@ -143,13 +120,13 @@ def collate_fn(batch):
 
 
 def fit(model, dataset):
-    loss_fn = nn.MSELoss()
+    loss_fn = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=0.0001)
     dl = DataLoader(dataset, batch_size=16, collate_fn=collate_fn, shuffle=True, drop_last=False)
 
-    pearsonr_metric = 0
+    auroc = 0
     i = 0
-    while pearsonr_metric < 0.85:
+    while auroc < 0.95:
         i += 1
         predictions = []
         labels = []
@@ -159,10 +136,11 @@ def fit(model, dataset):
             ss, label = b
             input_embedding = dataset.select_embeddings_from_seqs(ss)
             input_embedding = input_embedding.cuda()
-            label = label.cuda()
+            label = (label.cuda() > 0.9).long()
+
             prediction = model(input_embedding)
 
-            loss = loss_fn(label, prediction)
+            loss = loss_fn(prediction, label)
             loss.backward()
             optimizer.step()
 
@@ -170,31 +148,33 @@ def fit(model, dataset):
                 model.eval()
                 prediction = model(input_embedding)
                 labels.extend(label.cpu().detach().tolist())
-                predictions.extend(prediction.squeeze().cpu().detach().tolist())
+                # predictions.extend(prediction.squeeze().cpu().detach().tolist())
+                predictions.extend(prediction.softmax(-1)[:, 1].cpu().detach().tolist())
 
-        pearsonr_metric = spearmanr(predictions, labels)[0]
-        print(i, pearsonr_metric)
+        auroc = roc_auc_score(labels, predictions)
+        print(i, auroc)
     return model
 
 
 def test(model, dataset, verbose=False):
-    model.eval()
-    dl = DataLoader(dataset, batch_size=10, collate_fn=collate_fn, shuffle=False, drop_last=False)
-    predictions = []
-    labels = []
-    for b in dl:
-        ss, label = b
-        input_embedding = dataset.select_embeddings_from_seqs(ss)
-        input_embedding = input_embedding.cuda()
-        label = label.cuda()
-        prediction = model(input_embedding)
+    with torch.no_grad():
+        model.eval()
+        dl = DataLoader(dataset, batch_size=10, collate_fn=collate_fn, shuffle=False, drop_last=False)
+        predictions = []
+        labels = []
+        for b in dl:
+            ss, label = b
+            input_embedding = dataset.select_embeddings_from_seqs(ss)
+            input_embedding = input_embedding.cuda()
+            label = (label.cuda() > 0.9).long()
+            prediction = model(input_embedding)
 
-        labels.extend(label.cpu().detach().tolist())
-        predictions.extend(prediction.squeeze().cpu().detach().tolist())
-    if not verbose:
-        return spearmanr(predictions, labels)[0]
-    else:
-        return dataset.seqs, predictions, labels, spearmanr(predictions, labels)[0]
+            labels.extend(label.cpu().detach().tolist())
+            predictions.extend(prediction.softmax(-1)[:, 1].cpu().detach().tolist())
+        if not verbose:
+            return roc_auc_score(labels, predictions)
+        else:
+            return dataset.seqs, predictions, labels, roc_auc_score(labels, predictions)
 
 
 if __name__ == '__main__':
@@ -216,8 +196,8 @@ if __name__ == '__main__':
         f.write('ROUND\tPearsonR\n')
 
     print("2. 建立测试集")
-    test_seqs = generate_random_sequence(10, 7)
-    test_seqs.extend(generate_random_sequence(10, 8))
+    test_seqs = generate_random_sequence(22, 7)
+    test_seqs.extend(generate_random_sequence(23, 8))
     test_seqs.extend(['DASP DTHR ASN PRO DTHR LYS DASN',
                       'DASP DGLN DSER DGLU PRO DHIS PRO',
                       'DGLN DASP DPRO PRO DLYS THR ASP',
@@ -240,23 +220,23 @@ if __name__ == '__main__':
         print(seq, extract_pnear(os.path.join(TEST_DIR, seq)))
 
     print("4. 建立模型")
-    model = TransformerModel()
-    model = model.cuda()
+    seq_model = TransformerModel()
+    seq_model = seq_model.cuda()
 
     print("5. 测试一下在测试集上拟合与测试")
     test_dataset = Dataset(TEST_DIR)
-    s1 = test(model, test_dataset)
-    model = fit(model, test_dataset)
-    s2 = test(model, test_dataset)
+    s1 = test(seq_model, test_dataset)
+    model = fit(seq_model, test_dataset)
+    s2 = test(seq_model, test_dataset)
     print(f"Before Training, PearsonR {s1}")
     print(f"After Training, PearsonR {s2}")
 
     print("6. 主动学习过程")
     print("***初始化模型***")
-    model = TransformerModel()
-    torch.save(model.state_dict(), os.path.join(MODEL_DIR, 'round_0.pth'))
+    seq_model = TransformerModel()
+    torch.save(seq_model.state_dict(), os.path.join(MODEL_DIR, 'round_0.pth'))
 
-    model = model.cuda()
+    seq_model = seq_model.cuda()
     for round in range(1, 2000):
         print(f'*** 加载现有训练集 ***')
         training_set = Dataset(TRAIN_DIR)
@@ -264,7 +244,7 @@ if __name__ == '__main__':
 
         print(f'*** Round {round} 生成10000个候选序列')
         score_seqs = []
-        while len(score_seqs) < 2000:
+        while len(score_seqs) < 10000:
             if random.random() < 0.5:
                 seq = generate_random_sequence(1, 7)[0]
             else:
@@ -275,16 +255,16 @@ if __name__ == '__main__':
                 score_seqs.append(seq)
 
         print(f'*** Round {round} 生成10000个候选序列的表征')
-        seqs_embeddings = compute_sequence_embeddings(score_seqs)
+        seqs_embeddings = compute_sequence_embeddings_fast(score_seqs)
 
         print(f'*** Round {round} 使用模型对10000个候选序列进行预测与打分')
         seqs_scores = []
         temp_dl = DataLoader(seqs_embeddings, batch_size=100, shuffle=False, drop_last=False)
         for temp_b in temp_dl:
-            model.eval()
+            seq_model.eval()
             temp_b = temp_b.cuda()
-            temp_pred = model(temp_b)
-            seqs_scores.extend(temp_pred.cpu().detach().squeeze().tolist())
+            temp_pred = seq_model(temp_b)
+            seqs_scores.extend(temp_pred.softmax(-1)[:, 1].detach().squeeze().tolist())
 
         print(f'*** Round {round} 挑选前10名进行折叠，生成label')
         top_k = 10
@@ -308,19 +288,19 @@ if __name__ == '__main__':
                 f.write(f'{top_seqs[i]}\t{top_scores[i]}\t{top_labels[i]}\n')
 
         print(f'*** Round {round} 利用训练集更新训练模型')
-        model = TransformerModel().cuda()
+        seq_model = TransformerModel().cuda()
         train_dataset = Dataset(TRAIN_DIR)
-        s1 = test(model, train_dataset)
-        model = fit(model, train_dataset)
-        s2 = test(model, train_dataset)
+        s1 = test(seq_model, train_dataset)
+        seq_model = fit(seq_model, train_dataset)
+        s2 = test(seq_model, train_dataset)
         print(f"Before Training, PearsonR {s1}")
         print(f"After Training, PearsonR {s2}")
 
-        torch.save(model.state_dict(), os.path.join(MODEL_DIR, f'round_{round}.pth'))
+        torch.save(seq_model.state_dict(), os.path.join(MODEL_DIR, f'round_{round}.pth'))
 
         print(f'*** Round {round} 对测试集进行测试')
         test_dataset = Dataset(TEST_DIR)
-        seqs, preds, labels, s = test(model, test_dataset, verbose=True)
+        seqs, preds, labels, s = test(seq_model, test_dataset, verbose=True)
         with open(os.path.join(LOG_DIR, f'test_set.tsv'), 'a+') as f:
             f.write(f'{round}\t{s}\n')
 

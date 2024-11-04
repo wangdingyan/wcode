@@ -15,6 +15,9 @@ class TPATH:
         ROSETTA_PATH = "/home/fluoxetine/rosetta.source.release-371/"
         SCHRODINGER_PATH = "/mnt/c/Program\ Files/Schrodinger2024-2/"
 
+    elif platform == "linux" and pc_name == "Jupiter":
+        ROSETTA_PATH = "/root/rosetta.source.release-371"
+
     # Rosetta-related
     SIMPLEPEP = ROSETTA_PATH + "main/source/bin/simple_cycpep_predict.mpi.linuxgccrelease"
     SILENT_SPLIT = ROSETTA_PATH + "main/source/bin/extract_pdbs.mpi.linuxgccrelease"

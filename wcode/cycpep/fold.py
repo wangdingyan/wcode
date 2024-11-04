@@ -1,11 +1,12 @@
 import re
 import os
 import subprocess
+from random import choice
 from wcode.utils.config import TPATH
 
 FOLD_PNEAR = '''mpirun -np {mpi_n} {simple_cycpep_predict}  \
                 -sequence_file seq.txt  \
-                -cyclic_peptide:cyclization_type "n_to_c_amide_bond"  \
+                -cyclic_peptide:cyclization_type "{cyclization_type}"  \
                 -nstruct {n_struct}  \
                 -out:file:silent out.silent \
                 -cyclic_peptide:MPI_batchsize_by_level 125  \
@@ -34,6 +35,7 @@ def fold_pnear(root,
                mpi_n=10,
                lamd=1.0,
                frac=0.05,
+               cyclization_type='n_to_c_amide_bond',
                simple_cycpep_predict=TPATH.SIMPLEPEP,
                n_struct=10000):
     if os.path.exists(root):
@@ -52,6 +54,7 @@ def fold_pnear(root,
                                    lamd=lamd,
                                    frac=frac,
                                    simple_cycpep_predict=simple_cycpep_predict,
+                                   cyclization_type=cyclization_type,
                                    n_struct=n_struct))
 
     subprocess.run('bash fold.sh', cwd=root, shell=True)
@@ -59,7 +62,8 @@ def fold_pnear(root,
 
 def extract_pnear(root):
     log_file = '{}/run.log'.format(root)
-
+    if not os.path.exists(log_file):
+        return 0
     with open(log_file, 'r') as f:
         for line in f:
             line = line.strip()
@@ -68,7 +72,7 @@ def extract_pnear(root):
                 if match:
                     number = float(match.group())
                     return number
-    return None
+    return 0
 
 
 def extract_pdb_files(silent_file):
@@ -149,24 +153,44 @@ if __name__ == '__main__':
     # for ID, seq in [('5tu6', 'ILE ASN PRO TYR LEU TYR PRO')]:
     #     fold_pnear(f'/mnt/c/tmp/2017_Science2/{ID}', mpi_n=8, seq=seq, n_struct=10000, lamd=0.5, frac=1.00)
     # process_pdb_files_in_directory('/mnt/c/tmp/docking_pipeline_test/3AVF')
-    from wcode.cycpep.utils import generate_random_sequence
 
-    seqs = generate_random_sequence(50)
-    seqs.extend(['DASP DTHR ASN PRO DTHR LYS DASN',
-                 'DASP DGLN DSER DGLU PRO DHIS PRO',
-                 'DGLN DASP DPRO PRO DLYS THR ASP',
-                 'DASP DASP DPRO DTHR PRO ARG DGLN GLN',
-                 'DARG GLN DPRO DGLN ARG DGLU PRO GLN',
-                 'LYS ASP LEU DGLN DPRO PRO TYR DHIS PRO',
-                 'PRO GLU ALA ALA ARG DVAL DPRO ARG DLEU DTHR',
-                 'GLU DVAL ASP PRO DGLU DHIS DPRO ASN DALA DPRO'])
-    for num in [3000, 10000, 30000, 100000, 300000]:
-        for seq in seqs:
-            for t in range(3):
+
+    from wcode.cycpep.utils import generate_random_sequence
+    # seq_lists = os.listdir(f'/mnt/d/tmp/CycPepAL/test_dataset')
+
+    seq_lists = generate_random_sequence(1000, 8)
+    for num in [1000, 5000, 10000]:
+        for seq in seq_lists:
+            for t in range(5):
                 print(num, seq, t)
-                fold_pnear(f'/mnt/d/tmp/PRCyc/{seq}/{str(num)}/{str(t)}',
-                           mpi_n=8,
+                fold_pnear(f'/mnt/d/tmp/random_14/{seq}_{num}_{t}',
+                           mpi_n=4,
                            seq=seq,
                            n_struct=num,
-                           lamd=0.5,
+                           lamd=1,
                            frac=1)
+
+
+    # import pandas as pd
+    # seqs = pd.read_csv('/mnt/d/tmp/cyc83-SMILES.csv')['Sequence'].tolist()
+    # seqs = set(list(seqs))
+    # for seq in seqs:
+    #     length = len(seq.split(' '))
+    #
+    #     print(seq, length)
+    #     if seq.startswith('CYS') and seq.endswith('CYS'):
+    #         fold_pnear(f'/mnt/d/tmp/crystal/{seq}/',
+    #                         mpi_n=4,
+    #                         seq=seq,
+    #                         n_struct=10000,
+    #                         cyclization_type="terminal_disulfide",
+    #                         lamd=1,
+    #                         frac=1)
+    #     else:
+    #         fold_pnear(f'/mnt/d/tmp/crystal/{seq}/',
+    #                         mpi_n=4,
+    #                         seq=seq,
+    #                         n_struct=10000,
+    #                         cyclization_type="n_to_c_amide_bond",
+    #                         lamd=1,
+    #                         frac=1)

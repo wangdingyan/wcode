@@ -5,7 +5,13 @@ import networkx as nx
 import numpy as np
 import torch
 import esm
+from tqdm import tqdm
+
+from esme import ESM2
+from esme.alphabet import tokenize
+from wcode.protein.constant import STANDARD_AMINO_ACID_MAPPING_3_TO_1
 from wcode.protein.seq.utils import subset_by_node_feature_value
+
 
 
 def esm_residue_embedding(
@@ -78,3 +84,34 @@ if __name__ == '__main__':
     # (1, 8, 1280)
     print(compute_esm_embedding(['AAAA', 'CCCCCC'], 'residue').shape)
     # (2, 8, 1280)
+
+
+def compute_sequence_embeddings_fast(sequences: List[str],
+                                     batch_size=1000) -> torch.Tensor:
+    with torch.no_grad():
+        model = ESM2.from_pretrained("/mnt/d/tmp/650M.safetensors", device=0)
+        max_length = max(len(s.split()) for s in sequences)
+        total_embedding = torch.zeros(len(sequences), max_length, 35, dtype=torch.float32)
+
+        total_sequence = []
+        for i, seq in enumerate(sequences):
+            one_letter_sequence = ''
+            for j, aa in enumerate(seq.split()):
+                if aa.startswith('D'):
+                    total_embedding[i, j, -2] = 1.0
+                else:
+                    total_embedding[i, j, -1] = 1.0
+                aa = aa.replace('D', '')
+                one_letter = STANDARD_AMINO_ACID_MAPPING_3_TO_1.get(aa)
+                one_letter_sequence += one_letter
+            total_sequence.append(one_letter_sequence)
+
+        for i in tqdm(range(0, len(total_sequence), batch_size)):
+            batch_sequences = total_sequence[i:i + batch_size]
+            tokens = tokenize(batch_sequences)
+            sequence_embeddings = model(tokens.cuda())[:, 1:-1, :]
+
+            for j, embedding in enumerate(sequence_embeddings):
+                total_embedding[i + j, :embedding.size(0), :33] = embedding
+
+        return total_embedding

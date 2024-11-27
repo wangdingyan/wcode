@@ -7,8 +7,11 @@ import torch
 import esm
 from tqdm import tqdm
 
-from esme import ESM2
-from esme.alphabet import tokenize
+try:
+    from esme import ESM2
+    from esme.alphabet import tokenize
+except:
+    pass
 from wcode.protein.constant import STANDARD_AMINO_ACID_MAPPING_3_TO_1
 from wcode.protein.seq.utils import subset_by_node_feature_value
 

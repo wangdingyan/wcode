@@ -43,6 +43,8 @@ def tanimoto_similarity(smiles1, smiles2):
     # 生成ECFP4指纹（radius=2, nBits=1024）
     fp1 = AllChem.GetMorganFingerprintAsBitVect(mol1, radius=2, nBits=1024)
     fp2 = AllChem.GetMorganFingerprintAsBitVect(mol2, radius=2, nBits=1024)
+    # fp1 = MACCSkeys.GenMACCSKeys(mol1)
+    # fp2 = MACCSkeys.GenMACCSKeys(mol2)
 
     # 计算Tanimoto相似性
     similarity = FingerprintSimilarity(fp1, fp2)

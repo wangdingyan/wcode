@@ -1,7 +1,6 @@
 import os
 import torch
-from wcode.protein.seq.embedding import compute_sequence_embeddings_fast
-from wcode.cycpep.fold import extract_pnear
+# from wcode.cycpep.fold import extract_pnear
 
 
 class Dataset():
@@ -30,7 +29,38 @@ class Dataset():
         return embeddings
 
 
+def generate_cyclic_permutations(peptide, num_augments):
+
+
+    n = len(peptide)
+    if n <= 1:
+        raise ValueError("环肽序列的长度必须大于1")
+
+    if num_augments >= n:
+        raise ValueError(f"增强数量不能大于或等于环肽序列的长度 - 1, 当前最大值为 {n - 1}")
+
+    # augmentations = set()
+    augmentations = []
+
+    for i in range(1, n):
+
+        rotated_peptide = peptide[i:] + peptide[:i]
+        augmentations.append(rotated_peptide)
+
+        if len(augmentations) == num_augments:
+            break
+
+    # 返回增强序列列表
+    return augmentations
+
 if __name__ == '__main__':
-    dataset = Dataset(dataset_dir='/mnt/d/tmp/crystal')
-    for s, l in dataset:
-        print(s, l)
+    # dataset = Dataset(dataset_dir='/mnt/d/tmp/crystal')
+    # for s, l in dataset:
+    #     print(s, l)
+    peptide = "ABCDEFG"
+    # peptide = ['LYS', 'ASP', 'ALA', 'HIS']
+    num_augments = 3
+    augmented_sequences = generate_cyclic_permutations(peptide, num_augments)
+
+    print(f"输入环肽序列: {peptide}")
+    print(f"生成的增强序列: {augmented_sequences}")

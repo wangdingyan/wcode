@@ -14,7 +14,7 @@ except:
     pass
 from wcode.protein.constant import STANDARD_AMINO_ACID_MAPPING_3_TO_1
 from wcode.protein.seq.utils import subset_by_node_feature_value
-
+from copy import deepcopy
 
 
 def esm_residue_embedding(
@@ -45,9 +45,11 @@ def compute_esm_embedding(
     sequences: List[str],
     representation: str,
     output_layer: int = 33,
+    contacts: bool = False,
 ) -> np.ndarray:
     model, alphabet = _load_esm_model()
     batch_converter = alphabet.get_batch_converter()
+    model.eval()
 
     # data = [
     #     ("protein1", sequence),
@@ -61,10 +63,15 @@ def compute_esm_embedding(
         results = model(
             batch_tokens, repr_layers=[output_layer], return_contacts=True
         )
+
     token_representations = results["representations"][output_layer]
+    contact_array = results["contacts"]
 
     if representation == "residue":
-        return token_representations.numpy()
+        if not contacts:
+            return token_representations.numpy()
+        else:
+            return token_representations.numpy(), contact_array
 
     # Generate per-sequence representations via averaging
     # NOTE: token 0 is always a beginning-of-sequence token, so the first
@@ -75,46 +82,39 @@ def compute_esm_embedding(
             sequence_representations.append(
                 token_representations[i, 1: len(seq) + 1].mean(0)
             )
-        return torch.stack(sequence_representations)
+        if not contacts:
+            return torch.stack(sequence_representations)
+        else:
+            return torch.stack(sequence_representations), contact_array
 
 
 def _load_esm_model():
     return esm.pretrained.esm2_t33_650M_UR50D()
 
 
+def esme_embedding(sequences: List[str],
+                   batch_size=500,
+                   representation='sequence',
+                   device=0) -> torch.Tensor:
+
+
+    model = ESM2.from_pretrained("/home/wang_ding_yan/model/esm2_3b.safetensors", device=device)
+    total_embedding = []
+    for i in tqdm(range(0, len(sequences), batch_size)):
+        batch_sequences = sequences[i:i + batch_size]
+        tokens = tokenize(batch_sequences).to(device)
+        sequence_embeddings = model.embedding(tokens)[:, 1:-1, :]
+        total_embedding.append(sequence_embeddings)
+    total_embedding = torch.cat(total_embedding, dim=0)
+    if representation == "sequence":
+        return total_embedding.mean(1).float().detach()
+    else:
+        return total_embedding.float().detach()
+
+
 if __name__ == '__main__':
-    print(compute_esm_embedding(['CCCCCC'], 'residue').shape)
+    print(esme_embedding(['CCCCCC'], representation='sequence').shape)
     # (1, 8, 1280)
-    print(compute_esm_embedding(['AAAA', 'CCCCCC'], 'residue').shape)
+    print(esme_embedding(['AAAA', 'CCCCCC'], representation='sequence').shape)
     # (2, 8, 1280)
-
-
-def compute_sequence_embeddings_fast(sequences: List[str],
-                                     batch_size=1000) -> torch.Tensor:
-    with torch.no_grad():
-        model = ESM2.from_pretrained("/mnt/d/tmp/650M.safetensors", device=0)
-        max_length = max(len(s.split()) for s in sequences)
-        total_embedding = torch.zeros(len(sequences), max_length, 35, dtype=torch.float32)
-
-        total_sequence = []
-        for i, seq in enumerate(sequences):
-            one_letter_sequence = ''
-            for j, aa in enumerate(seq.split()):
-                if aa.startswith('D'):
-                    total_embedding[i, j, -2] = 1.0
-                else:
-                    total_embedding[i, j, -1] = 1.0
-                aa = aa.replace('D', '')
-                one_letter = STANDARD_AMINO_ACID_MAPPING_3_TO_1.get(aa)
-                one_letter_sequence += one_letter
-            total_sequence.append(one_letter_sequence)
-
-        for i in tqdm(range(0, len(total_sequence), batch_size)):
-            batch_sequences = total_sequence[i:i + batch_size]
-            tokens = tokenize(batch_sequences)
-            sequence_embeddings = model(tokens.cuda())[:, 1:-1, :]
-
-            for j, embedding in enumerate(sequence_embeddings):
-                total_embedding[i + j, :embedding.size(0), :33] = embedding
-
-        return total_embedding
+    # print(esme_embedding(['DASP GLU HIS', 'ALA DGLU HIS PRO']*200, device=3).shape)

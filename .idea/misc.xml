@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="Black">
-    <option name="sdkName" value="Python 3.11" />
-  </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.8.20 (sftp://wang_ding_yan@192.168.202.12:22/home/wang_ding_yan/miniforge3/envs/py38/bin/python)" project-jdk-type="Python SDK" />
-</project>
